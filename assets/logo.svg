@@ -1,0 +1,8 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Wedding Ring Design -->
+  <circle cx="20" cy="20" r="16" stroke="#e11d48" stroke-width="2" fill="none"/>
+  <circle cx="20" cy="20" r="12" stroke="#fbbf24" stroke-width="1.5" fill="none"/>
+  <!-- Diamond/Stone -->
+  <path d="M20 8 L24 16 L20 24 L16 16 Z" fill="#e11d48"/>
+  <path d="M20 8 L22 14 L20 16 L18 14 Z" fill="#fbbf24"/>
+</svg>

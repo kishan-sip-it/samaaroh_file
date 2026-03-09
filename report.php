@@ -47,32 +47,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </style>
 </head>
 <body class="bg-stone-50">
-    <!-- Navigation -->
-    <nav class="bg-white/90 backdrop-blur-sm sticky top-0 z-50 border-b border-stone-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center gap-2">
-                    <span class="text-3xl">✨</span>
-                    <a href="<?= BASE_URL ?>" class="heading text-2xl font-bold tracking-tight text-rose-700">SAMAAROH</a>
-                </div>
-                <div class="hidden md:flex space-x-8 font-medium text-stone-600">
-                    <a href="<?= BASE_URL ?>index.php" class="hover:text-rose-600 transition">Home</a>
-                    <a href="<?= BASE_URL ?>report.php" class="hover:text-rose-600 transition">Report Issue</a>
-                    <a href="<?= BASE_URL ?>feedback.php" class="hover:text-rose-600 transition">Feedback</a>
-                </div>
-                <div class="flex items-center gap-4">
-                    <a href="<?= BASE_URL ?>login.php" class="text-stone-600 px-4 hover:text-rose-600 font-medium">Login</a>
-                    <a href="<?= BASE_URL ?>register.php" class="bg-rose-600 text-white px-6 py-2 rounded-full hover:bg-rose-700 transition font-medium">Get Started</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <?php include 'includes/navbar.php'; ?>
 
     <!-- Hero Section -->
-    <section class="bg-gradient-to-br from-rose-600 to-amber-500 py-20">
+    <section class="bg-stone-100 py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="heading text-4xl md:text-5xl font-bold text-white mb-6">Report an Issue</h1>
-            <p class="text-amber-100 text-xl max-w-2xl mx-auto">
+            <h1 class="heading text-3xl md:text-4xl font-bold text-stone-800 mb-4">Report an Issue</h1>
+            <p class="text-stone-600 max-w-2xl mx-auto">
                 Help us improve Samaaroh by reporting any issues or concerns you encounter
             </p>
         </div>

@@ -9,7 +9,17 @@ require_once __DIR__ . '/../config/config.php';
         <div class="flex justify-between h-20 items-center">
             <!-- Logo & Brand -->
             <div class="flex items-center gap-2">
-                <span class="text-3xl">✨</span>
+                <!-- Logo Image (uncomment if you have logo.png) -->
+                <!-- <img src="<?= BASE_URL ?>assets/logo.png" alt="Samaaroh" class="h-10 w-10"> -->
+                
+                <!-- SVG Logo (current) -->
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="20" cy="20" r="16" stroke="#e11d48" stroke-width="2" fill="none"/>
+                    <circle cx="20" cy="20" r="12" stroke="#fbbf24" stroke-width="1.5" fill="none"/>
+                    <path d="M20 8 L24 16 L20 24 L16 16 Z" fill="#e11d48"/>
+                    <path d="M20 8 L22 14 L20 16 L18 14 Z" fill="#fbbf24"/>
+                </svg>
+                
                 <a href="<?= BASE_URL ?>" class="heading text-2xl font-bold tracking-tight text-rose-700 hover:text-rose-800 transition">
                     SAMAAROH
                 </a>
@@ -74,7 +84,13 @@ require_once __DIR__ . '/../config/config.php';
 <div class="md:hidden fixed inset-0 bg-white z-40 p-6 transform translate-x-full transition-transform duration-300" id="mobile-menu">
     <div class="flex justify-between items-center mb-8">
         <div class="flex items-center gap-2">
-            <span class="text-3xl">✨</span>
+            <!-- SVG Logo (mobile) -->
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="20" cy="20" r="16" stroke="#e11d48" stroke-width="2" fill="none"/>
+                <circle cx="20" cy="20" r="12" stroke="#fbbf24" stroke-width="1.5" fill="none"/>
+                <path d="M20 8 L24 16 L20 24 L16 16 Z" fill="#e11d48"/>
+                <path d="M20 8 L22 14 L20 16 L18 14 Z" fill="#fbbf24"/>
+            </svg>
             <h1 class="heading text-2xl font-bold text-rose-700">SAMAAROH</h1>
         </div>
         <button id="close-menu" class="text-stone-600 hover:text-rose-600 p-2">
