@@ -16,9 +16,13 @@ require_once __DIR__ . '/../config/config.php';
             <!-- Brand Section -->
             <div class="lg:col-span-2">
                 <div class="flex items-center gap-3 mb-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-rose-600 to-amber-500 rounded-xl flex items-center justify-center shadow-lg">
-                        <span class="text-2xl">✨</span>
-                    </div>
+                    <!-- SVG Logo (footer) -->
+                    <svg width="48" height="48" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="bg-gradient-to-br from-rose-600 to-amber-500 rounded-xl p-2 shadow-lg">
+                        <circle cx="20" cy="20" r="16" stroke="#ffffff" stroke-width="2" fill="none"/>
+                        <circle cx="20" cy="20" r="12" stroke="#fbbf24" stroke-width="1.5" fill="none"/>
+                        <path d="M20 8 L24 16 L20 24 L16 16 Z" fill="#ffffff"/>
+                        <path d="M20 8 L22 14 L20 16 L18 14 Z" fill="#fbbf24"/>
+                    </svg>
                     <div>
                         <h2 class="heading text-3xl font-bold text-white">SAMAAROH</h2>
                         <p class="text-rose-400 text-sm font-medium">Wedding Planning Excellence</p>
