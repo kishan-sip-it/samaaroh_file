@@ -1,0 +1,28 @@
+/* Hero Slider Animation - Nadiad Wedding Showcase */
+.hero-slider {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  animation: gujaratSmoothSlider 25s infinite;
+  transition: background-image 1.5s ease-in-out;
+  will-change: background-image;
+}
+
+@keyframes gujaratSmoothSlider {
+  0%, 10% { background-image: url('/samaaroh_file/images/banner.jpg'); }
+  15%, 20% { background-image: url('/samaaroh_file/images/image2.jpg'); }
+  22%, 25% { background-image: url('/samaaroh_file/images/image3.jpg'); }
+  35%, 40% { background-image: url('/samaaroh_file/images/image4.jpg'); }
+  42%, 45% { background-image: url('/samaaroh_file/images/image5.jpg'); }
+  46%, 100% { background-image: url('/samaaroh_file/images/banner.jpg'); }
+}
+
+/* Overlay for text readability */
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(106,27,154,0.85) 100%);
+}
