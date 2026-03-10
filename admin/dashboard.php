@@ -173,38 +173,6 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                 <div class="text-stone-500">Total Bookings</div>
             </div>
         </div>
-        
-        <!-- Admin Management Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            <!-- Invite New Admin Card -->
-            <div class="invitation-card bg-white rounded-xl p-6 border border-stone-200">
-                <div class="flex items-center mb-4">
-                    <div class="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
-                        <span class="text-rose-600 text-xl">👑</span>
-                    </div>
-                    <h2 class="font-bold text-xl text-stone-800 ml-3">Invite New Admin</h2>
-                </div>
-                
-                <p class="text-stone-600 mb-4">
-                    Create a secure invitation link for a new admin. The link expires in 7 days and can only be used once.
-                </p>
-                
-                <form method="POST" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-stone-700 mb-1">Admin Email Address</label>
-                        <input type="email" name="invite_email" required 
-                               class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                               placeholder="new.admin@example.com">
-                        <p class="text-xs text-stone-400 mt-1">
-                            Only one active invitation per email address
-                        </p>
-                    </div>
-                    
-                    <button type="submit" 
-                            class="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2">
-                        <span>Generate Invitation Link</span>
-                        <span>→</span>
-                    </button>
                 </form>
                 
                 <div class="mt-6 pt-4 border-t border-stone-100">
@@ -219,31 +187,8 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                 </div>
             </div>
             
-            <!-- Platform Health -->
-            <div class="bg-white rounded-xl p-6 border border-stone-200">
-                <h2 class="font-bold text-xl text-stone-800 mb-4">Platform Health</h2>
-                <div class="space-y-3 text-stone-600">
-                    <p>✅ Customer workflow: Fully functional</p>
-                    <p>✅ Provider workflow: 12-hour acceptance active</p>
-                    <p>✅ All services verified in Nadiad area</p>
-                    <p>✅ Zero payment processing (demo mode)</p>
-                    <p>✅ Admin invitations: Secure token-based system</p>
-                    <div class="mt-6 pt-4 border-t border-stone-100">
-                        <a href="<?= BASE_URL ?>logout.php" class="block bg-rose-600 text-white text-center py-2 rounded-lg hover:bg-rose-700 transition">
-                            Logout
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
         
-        <!-- Viva Guidance -->
-        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
-            <p class="font-medium text-blue-800">
-                💡 <strong>Viva Tip:</strong> "Our admin invitation system uses cryptographically secure tokens with 7-day expiry and single-use validation. 
-                This prevents backdoor access while maintaining auditability — critical for production systems handling sensitive wedding data in Nadiad."
-            </p>
-        </div>
+        
     </main>
     
     <?php include '../includes/footer.php'; ?>
