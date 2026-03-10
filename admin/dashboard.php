@@ -222,7 +222,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                 <div class="space-y-3">
                     <?php
                     $pending = $pdo->query("
-                        SELECT email, token, expires_at, created_at, u.name as invited_by_name
+                        SELECT ai.email, ai.token, ai.expires_at, ai.created_at, u.name as invited_by_name
                         FROM admin_invitations ai
                         LEFT JOIN users u ON ai.invited_by = u.id
                         WHERE ai.accepted_at IS NULL AND ai.expires_at > NOW()
@@ -232,7 +232,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                     if (empty($pending)):
                     ?>
                     <div class="text-center py-6 text-stone-500">
-                        <span class="text-2xl">📭</span>
+                        <span class="text-2xl">�</span>
                         <p class="mt-2">No pending invitations</p>
                     </div>
                     <?php else: ?>
