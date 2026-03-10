@@ -173,23 +173,94 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                 <div class="text-stone-500">Total Bookings</div>
             </div>
         </div>
-                </form>
-                
-                <div class="mt-6 pt-4 border-t border-stone-100">
-                    <div class="flex justify-between text-sm">
-                        <span class="text-stone-500">Current Admins:</span>
-                        <span class="font-bold text-stone-800"><?= $stats['admins'] ?></span>
+        
+        <!-- Admin Management Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <!-- Current Admins -->
+            <div class="bg-white rounded-xl p-6 border border-stone-200">
+                <div class="flex items-center mb-4">
+                    <div class="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
+                        <span class="text-rose-600 text-xl">👑</span>
                     </div>
-                    <div class="flex justify-between text-sm mt-2">
-                        <span class="text-stone-500">Pending Invitations:</span>
-                        <span class="font-bold text-amber-600"><?= $stats['pending_invitations'] ?></span>
+                    <h2 class="font-bold text-xl text-stone-800 ml-3">Current Admins</h2>
+                </div>
+                
+                <div class="space-y-3">
+                    <?php
+                    $admins = $pdo->query("SELECT id, name, email, created_at FROM users WHERE role = 'admin' ORDER BY created_at DESC")->fetchAll();
+                    foreach ($admins as $admin):
+                    ?>
+                    <div class="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
+                        <div>
+                            <div class="font-medium text-stone-800"><?= htmlspecialchars($admin['name']) ?></div>
+                            <div class="text-sm text-stone-500"><?= htmlspecialchars($admin['email']) ?></div>
+                        </div>
+                        <div class="text-xs text-stone-400">
+                            <?= date('M d, Y', strtotime($admin['created_at'])) ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-stone-100">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-stone-500">Total Admins:</span>
+                        <span class="font-bold text-rose-600"><?= count($admins) ?></span>
                     </div>
                 </div>
             </div>
             
+            <!-- Pending Invitations -->
+            <div class="bg-white rounded-xl p-6 border border-stone-200">
+                <div class="flex items-center mb-4">
+                    <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                        <span class="text-amber-600 text-xl">📧</span>
+                    </div>
+                    <h2 class="font-bold text-xl text-stone-800 ml-3">Pending Invitations</h2>
+                </div>
+                
+                <div class="space-y-3">
+                    <?php
+                    $pending = $pdo->query("
+                        SELECT email, token, expires_at, created_at, u.name as invited_by_name
+                        FROM admin_invitations ai
+                        LEFT JOIN users u ON ai.invited_by = u.id
+                        WHERE ai.accepted_at IS NULL AND ai.expires_at > NOW()
+                        ORDER BY ai.created_at DESC
+                    ")->fetchAll();
+                    
+                    if (empty($pending)):
+                    ?>
+                    <div class="text-center py-6 text-stone-500">
+                        <span class="text-2xl">📭</span>
+                        <p class="mt-2">No pending invitations</p>
+                    </div>
+                    <?php else: ?>
+                        <?php foreach ($pending as $inv): ?>
+                        <div class="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
+                            <div>
+                                <div class="font-medium text-stone-800"><?= htmlspecialchars($inv['email']) ?></div>
+                                <div class="text-sm text-stone-500">Invited by <?= htmlspecialchars($inv['invited_by_name']) ?></div>
+                                <div class="text-xs text-amber-600">Expires: <?= date('M d, Y H:i', strtotime($inv['expires_at'])) ?></div>
+                            </div>
+                            <div class="text-xs text-stone-400">
+                                <?= date('M d', strtotime($inv['created_at'])) ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-stone-100">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-stone-500">Pending:</span>
+                        <span class="font-bold text-amber-600"><?= count($pending) ?></span>
+                    </div>
+                </div>
+            </div>
+        </div>
         
-        
-    </main>
+     </main>
     
     <?php include '../includes/footer.php'; ?>
 </body>
