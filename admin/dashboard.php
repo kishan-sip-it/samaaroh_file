@@ -142,10 +142,20 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                     <p class="text-stone-600 text-sm">View and manage all customer & provider accounts</p>
                 </a>
                 
+                <a href="<?= BASE_URL ?>admin/user_reports.php" class="bg-white rounded-2xl border border-stone-200 p-6 hover:shadow-lg transition group">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200 transition">
+                            <span class="text-2xl">📊</span>
+                        </div>
+                        <h3 class="font-bold text-lg text-stone-800">User Reports</h3>
+                    </div>
+                    <p class="text-stone-600 text-sm">Download user analytics in PDF & Excel format</p>
+                </a>
+                
                 <a href="<?= BASE_URL ?>admin/view_reports.php" class="bg-white rounded-2xl border border-stone-200 p-6 hover:shadow-lg transition group">
                     <div class="flex items-center gap-3 mb-3">
                         <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center group-hover:bg-rose-200 transition">
-                            <span class="text-2xl">📊</span>
+                            <span class="text-2xl">�</span>
                         </div>
                         <h3 class="font-bold text-lg text-stone-800">View Reports</h3>
                     </div>
