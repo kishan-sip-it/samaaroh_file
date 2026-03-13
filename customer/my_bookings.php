@@ -207,9 +207,17 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                                     <div class="bg-green-50 text-green-800 px-4 py-2 rounded-lg font-medium text-sm mb-3">
                                         ✅ Confirmed by provider
                                     </div>
-                                    <a href="#" class="text-rose-600 text-sm font-medium hover:underline">
-                                        Contact provider for details →
-                                    </a>
+                                    <div class="flex gap-2">
+                                        <a href="<?= BASE_URL ?>invoice.php?id=<?= $booking['id'] ?>" class="inline-flex items-center gap-1 bg-rose-600 hover:bg-rose-700 text-white font-medium py-2 px-3 rounded-lg transition text-sm">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2h2m-6-4h6m2 4h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2z"/>
+                                            </svg>
+                                            View Invoice
+                                        </a>
+                                        <a href="#" class="text-rose-600 text-sm font-medium hover:underline">
+                                            Contact provider for details →
+                                        </a>
+                                    </div>
                                 <?php elseif ($booking['status'] === 'cancelled'): ?>
                                     <div class="bg-red-50 text-red-800 px-4 py-2 rounded-lg font-medium text-sm mb-3">
                                         ❌ Cancelled
