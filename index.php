@@ -45,12 +45,38 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                     Nadiad's trusted wedding platform since 2024.
                 </p>
                 <div class="flex flex-wrap justify-center gap-4">
-                    <a href="<?= BASE_URL ?>register.php" class="bg-stone-900 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-stone-800 shadow-xl transition transform hover:scale-105">
-                        Plan Your Wedding
-                    </a>
-                    <a href="<?= BASE_URL ?>register.php?role=provider" class="bg-white/10 backdrop-blur-sm text-white border border-white/20 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/20 transition">
-                        List Your Service
-                    </a>
+                    <?php if (isset($_SESSION['user_id'])): ?>
+                        <?php if ($_SESSION['role'] === 'customer'): ?>
+                            <a href="<?= BASE_URL ?>customer/dashboard.php" class="bg-stone-900 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-stone-800 shadow-xl transition transform hover:scale-105">
+                                Plan Your Wedding
+                            </a>
+                        <?php elseif ($_SESSION['role'] === 'provider'): ?>
+                            <a href="<?= BASE_URL ?>provider/dashboard.php" class="bg-stone-900 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-stone-800 shadow-xl transition transform hover:scale-105">
+                                Manage Your Services
+                            </a>
+                        <?php elseif ($_SESSION['role'] === 'admin'): ?>
+                            <a href="<?= BASE_URL ?>admin/dashboard.php" class="bg-stone-900 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-stone-800 shadow-xl transition transform hover:scale-105">
+                                Admin Dashboard
+                            </a>
+                        <?php endif; ?>
+                        
+                        <?php if ($_SESSION['role'] === 'provider'): ?>
+                            <a href="<?= BASE_URL ?>provider/new_service.php" class="bg-white/10 backdrop-blur-sm text-white border border-white/20 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/20 transition">
+                                List New Service
+                            </a>
+                        <?php else: ?>
+                            <a href="<?= BASE_URL ?>services.php" class="bg-white/10 backdrop-blur-sm text-white border border-white/20 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/20 transition">
+                                Browse Services
+                            </a>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <a href="<?= BASE_URL ?>register.php" class="bg-stone-900 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-stone-800 shadow-xl transition transform hover:scale-105">
+                            Plan Your Wedding
+                        </a>
+                        <a href="<?= BASE_URL ?>register.php?role=provider" class="bg-white/10 backdrop-blur-sm text-white border border-white/20 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/20 transition">
+                            List Your Service
+                        </a>
+                    <?php endif; ?>
                 </div>
                 
                 <!-- Social Proof -->
