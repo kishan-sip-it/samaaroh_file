@@ -21,8 +21,7 @@ if ($_SESSION['role'] === 'customer') {
     // Customer can only see their own bookings
     $stmt = $pdo->prepare("
         SELECT b.*, s.title as service_title, s.category, s.price as service_price,
-               u.name as provider_name, u.email as provider_email, u.phone as provider_phone,
-               u.address as provider_address, u.gst_number as provider_gst
+               u.name as provider_name, u.email as provider_email, u.phone as provider_phone
         FROM bookings b
         LEFT JOIN services s ON b.service_id = s.id
         LEFT JOIN users u ON s.provider_id = u.id
@@ -33,8 +32,7 @@ if ($_SESSION['role'] === 'customer') {
     // Provider can only see bookings for their services
     $stmt = $pdo->prepare("
         SELECT b.*, s.title as service_title, s.category, s.price as service_price,
-               c.name as customer_name, c.email as customer_email, c.phone as customer_phone,
-               c.address as customer_address
+               c.name as customer_name, c.email as customer_email, c.phone as customer_phone
         FROM bookings b
         LEFT JOIN services s ON b.service_id = s.id
         LEFT JOIN users c ON b.customer_id = c.id
@@ -46,9 +44,7 @@ if ($_SESSION['role'] === 'customer') {
     $stmt = $pdo->prepare("
         SELECT b.*, s.title as service_title, s.category, s.price as service_price,
                u.name as provider_name, u.email as provider_email, u.phone as provider_phone,
-               u.address as provider_address, u.gst_number as provider_gst,
-               c.name as customer_name, c.email as customer_email, c.phone as customer_phone,
-               c.address as customer_address
+               c.name as customer_name, c.email as customer_email, c.phone as customer_phone
         FROM bookings b
         LEFT JOIN services s ON b.service_id = s.id
         LEFT JOIN users u ON s.provider_id = u.id
@@ -82,13 +78,13 @@ $billing_party = $is_customer_viewing ?
         'name' => $booking['provider_name'],
         'email' => $booking['provider_email'],
         'phone' => $booking['provider_phone'],
-        'address' => $booking['provider_address'],
-        'gst' => $booking['provider_gst'] ?? 'N/A'
+        'address' => $booking['address'] ?? 'N/A',
+        'gst' => $booking['gst_number'] ?? 'N/A'
     ] : [
         'name' => $booking['customer_name'],
         'email' => $booking['customer_email'],
         'phone' => $booking['customer_phone'],
-        'address' => $booking['customer_address'],
+        'address' => $booking['address'] ?? 'N/A',
         'gst' => 'N/A'
     ];
 ?>
@@ -134,7 +130,7 @@ $billing_party = $is_customer_viewing ?
                     <div>
                         <h1 class="heading text-3xl font-bold text-rose-600 mb-2">INVOICE</h1>
                         <p class="text-gray-600">Invoice Number: <?= $invoice_number ?></p>
-                        <p class="text-gray-600">Date: <?= date('d M, Y', strtotime($booking['created_at'])) ?></p>
+                        <p class="text-gray-600">Date: <?= date('d M, Y', strtotime($booking['booking_date'])) ?></p>
                         <p class="text-gray-600">Booking Date: <?= date('d M, Y', strtotime($booking['booking_date'])) ?></p>
                     </div>
                     <div class="text-right">
@@ -168,7 +164,7 @@ $billing_party = $is_customer_viewing ?
                         <p class="font-medium text-gray-800"><?= htmlspecialchars($booking['provider_name']) ?></p>
                         <p class="text-gray-600"><?= htmlspecialchars($booking['provider_email']) ?></p>
                         <p class="text-gray-600"><?= htmlspecialchars($booking['provider_phone']) ?></p>
-                        <p class="text-gray-600"><?= htmlspecialchars($booking['provider_address']) ?></p>
+                        <p class="text-gray-600"><?= htmlspecialchars($billing_party['address']) ?></p>
                     </div>
                 </div>
             </div>
