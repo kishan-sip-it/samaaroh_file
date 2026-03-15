@@ -32,81 +32,63 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
 
     <?php include 'includes/navbar.php'; ?>
 
-    <!-- Hero Section with Animation (CORRECT PATH) -->
-    <header class="hero-slider relative overflow-hidden">
-        <!-- Dual image layers for seamless crossfade -->
-        <div class="hero-layer hero-layer-front" style="background-image: url('/samaaroh_file/images/banner.jpg')"></div>
-        <div class="hero-layer hero-layer-back" style="background-image: url('/samaaroh_file/images/image2.jpg')"></div>
-        
-        <div class="hero-overlay"></div>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center justify-center h-full text-center">
-            <div class="max-w-3xl">
-                <h1 class="heading text-4xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg">
-                    Your Dream Gujarati Wedding, <span class="text-amber-300">Perfectly Planned</span>
-                </h1>
-                <p class="text-xl text-stone-100 mb-10 max-w-2xl mx-auto drop-shadow-md">
-                    Book verified Bagiwalas, caterers, photographers & decorators in one place. 
-                    Nadiad's trusted wedding platform since 2026.
-                </p>
-                <div class="flex flex-wrap justify-center gap-4">
-                    <?php if (isset($_SESSION['user_id'])): ?>
-                        <?php if ($_SESSION['role'] === 'customer'): ?>
-                            <a href="<?= BASE_URL ?>customer/dashboard.php" class="bg-stone-900 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-stone-800 shadow-xl transition transform hover:scale-105">
-                                Plan Your Wedding
-                            </a>
-                        <?php elseif ($_SESSION['role'] === 'provider'): ?>
-                            <a href="<?= BASE_URL ?>provider/dashboard.php" class="bg-stone-900 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-stone-800 shadow-xl transition transform hover:scale-105">
-                                Manage Your Services
-                            </a>
-                        <?php elseif ($_SESSION['role'] === 'admin'): ?>
-                            <a href="<?= BASE_URL ?>admin/dashboard.php" class="bg-stone-900 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-stone-800 shadow-xl transition transform hover:scale-105">
-                                Admin Dashboard
-                            </a>
-                        <?php endif; ?>
-                        
-                        <?php if ($_SESSION['role'] === 'provider'): ?>
-                            <a href="<?= BASE_URL ?>provider/new_service.php" class="bg-white/10 backdrop-blur-sm text-white border border-white/20 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/20 transition">
-                                List New Service
-                            </a>
-                        <?php else: ?>
-                            <a href="<?= BASE_URL ?>services.php" class="bg-white/10 backdrop-blur-sm text-white border border-white/20 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/20 transition">
-                                Browse Services
-                            </a>
-                        <?php endif; ?>
-                    <?php else: ?>
-                        <a href="<?= BASE_URL ?>register.php" class="bg-stone-900 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-stone-800 shadow-xl transition transform hover:scale-105">
-                            Plan Your Wedding
-                        </a>
-                        <a href="<?= BASE_URL ?>register.php?role=provider" class="bg-white/10 backdrop-blur-sm text-white border border-white/20 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/20 transition">
-                            List Your Service
-                        </a>
-                    <?php endif; ?>
-                </div>
-                
-                <!-- Social Proof -->
-                <div class="mt-12 flex flex-wrap justify-center gap-8 text-white/90 text-sm">
-                    <div class="flex items-center">
-                        <span class="text-2xl font-bold text-amber-300 mr-2">250+</span>
-                        <span>Verified Vendors</span>
-                    </div>
-                    <div class="flex items-center">
-                        <span class="text-2xl font-bold text-amber-300 mr-2">1,200+</span>
-                        <span>Happy Weddings</span>
-                    </div>
-                    <div class="flex items-center">
-                        <span class="text-2xl font-bold text-amber-300 mr-2">Nadiad</span>
-                        <span>Based & Trusted</span>
-                    </div>
-                </div>
+    <!-- Hero Section - Cross-Fade Backgrounds -->
+    <header class="relative overflow-hidden h-screen">
+      <!-- Background Slides (ONLY these fade) -->
+      <div class="hero-backgrounds">
+        <div class="hero-bg active" style="background-image: url('/samaaroh_file/images/banner.jpg')"></div>
+        <div class="hero-bg" style="background-image: url('/samaaroh_file/images/image2.jpg')"></div>
+        <div class="hero-bg" style="background-image: url('/samaaroh_file/images/image3.jpg')"></div>
+        <div class="hero-bg" style="background-image: url('/samaaroh_file/images/image4.jpg')"></div>
+        <div class="hero-bg" style="background-image: url('/samaaroh_file/images/image5.jpg')"></div>
+      </div>
+      
+      <!-- Overlay (Stable - Never Fades) -->
+      <div class="hero-overlay"></div>
+      
+      <!-- Content (Stable - Never Fades) -->
+      <div class="hero-content">
+        <div class="max-w-3xl">
+          <h1 class="heading text-4xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg">
+            Your Dream Gujarati Wedding, <span class="text-amber-300">Perfectly Planned</span>
+          </h1>
+          <p class="text-xl text-stone-100 mb-10 max-w-2xl mx-auto drop-shadow-md">
+            Book verified Bagiwalas, caterers, photographers & decorators in one place. 
+            Nadiad's trusted wedding platform since 2026.
+          </p>
+          <div class="flex flex-wrap justify-center gap-4">
+            <a href="<?= BASE_URL ?>register.php" class="bg-stone-900 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-stone-800 shadow-xl transition transform hover:scale-105">
+              Plan Your Wedding
+            </a>
+            <a href="<?= BASE_URL ?>register.php?role=provider" class="bg-white/10 backdrop-blur-sm text-white border border-white/20 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/20 transition">
+              List Your Service
+            </a>
+          </div>
+          
+          <!-- Social Proof -->
+          <div class="mt-12 flex flex-wrap justify-center gap-8 text-white/90 text-sm">
+            <div class="flex items-center">
+              <span class="text-2xl font-bold text-amber-300 mr-2">250+</span>
+              <span>Verified Vendors</span>
             </div>
+            <div class="flex items-center">
+              <span class="text-2xl font-bold text-amber-300 mr-2">1,200+</span>
+              <span>Happy Weddings</span>
+            </div>
+            <div class="flex items-center">
+              <span class="text-2xl font-bold text-amber-300 mr-2">Nadiad</span>
+              <span>Based & Trusted</span>
+            </div>
+          </div>
         </div>
         
         <!-- Floating Decor Elements -->
         <div class="absolute bottom-16 left-1/2 transform -translate-x-1/2 flex gap-4 animate-bounce">
-            <span class="text-4xl">👰</span>
-            <span class="text-4xl">🤵</span>
-            <span class="text-4xl">🎉</span>
+          <span class="text-4xl">👰</span>
+          <span class="text-4xl">🤵</span>
+          <span class="text-4xl">🎉</span>
         </div>
+      </div>
     </header>
 
     <!-- How It Works Section -->
@@ -324,67 +306,39 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
 
     <?php include 'includes/footer.php'; ?>
 
-    <!-- Smooth Hero Slider Script - Crossfade Transition -->
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const hero = document.querySelector('.hero-slider');
-      if (!hero) return;
-      
-      // Your 5 wedding images (UPDATE PATHS IF NEEDED)
-      const images = [
-        '/samaaroh_file/images/banner.jpg',
-        '/samaaroh_file/images/image2.jpg',
-        '/samaaroh_file/images/image3.jpg',
-        '/samaaroh_file/images/image4.jpg',
-        '/samaaroh_file/images/image5.jpg'
-      ];
-      
+      const backgrounds = document.querySelectorAll('.hero-bg');
       let currentIndex = 0;
-      const FADE_DURATION = 1800; // 1.8 seconds fade
       const DISPLAY_DURATION = 5000; // 5 seconds per image
+      const FADE_DURATION = 1800;    // 1.8 seconds fade
       
-      // Get the two layers
-      const frontLayer = hero.querySelector('.hero-layer-front');
-      const backLayer = hero.querySelector('.hero-layer-back');
-      
-      // Start smooth crossfade rotation
-      setInterval(() => {
-        // Calculate next image index
-        currentIndex = (currentIndex + 1) % images.length;
-        const nextImageIndex = (currentIndex + 1) % images.length;
+      function rotateBackgrounds() {
+        // Fade out current
+        backgrounds[currentIndex].classList.remove('active');
         
-        // Set next image on the back layer (hidden)
-        backLayer.style.backgroundImage = `url('${images[nextImageIndex]}')`;
+        // Calculate next index
+        currentIndex = (currentIndex + 1) % backgrounds.length;
         
-        // Crossfade: fade out front, fade in back
-        frontLayer.style.opacity = '0';
-        backLayer.style.opacity = '1';
-        
-        // Swap layers for next transition
+        // Fade in next (after tiny delay to avoid flash)
         setTimeout(() => {
-          // Swap classes and reset opacity
-          frontLayer.classList.remove('hero-layer-front');
-          frontLayer.classList.add('hero-layer-back');
-          backLayer.classList.remove('hero-layer-back');
-          backLayer.classList.add('hero-layer-front');
-          
-          // Reset opacity for next cycle
-          frontLayer.style.opacity = '0';
-          backLayer.style.opacity = '1';
-          
-          // Update references for next cycle
-          const newFrontLayer = hero.querySelector('.hero-layer-front');
-          const newBackLayer = hero.querySelector('.hero-layer-back');
-        }, FADE_DURATION);
+          backgrounds[currentIndex].classList.add('active');
+        }, 50);
         
-      }, DISPLAY_DURATION);
+        // Schedule next rotation
+        setTimeout(rotateBackgrounds, DISPLAY_DURATION);
+      }
+      
+      // Start rotation after initial delay
+      setTimeout(rotateBackgrounds, DISPLAY_DURATION);
       
       // Optional: Pause on hover (great for demos!)
+      const hero = document.querySelector('header');
       hero.addEventListener('mouseenter', () => {
-        hero.style.animationPlayState = 'paused';
+        clearTimeout(window.heroTimeout);
       });
       hero.addEventListener('mouseleave', () => {
-        hero.style.animationPlayState = 'running';
+        window.heroTimeout = setTimeout(rotateBackgrounds, DISPLAY_DURATION);
       });
     });
     </script>

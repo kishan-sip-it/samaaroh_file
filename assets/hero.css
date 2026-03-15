@@ -1,41 +1,41 @@
-/* Smooth Hero Slider - Crossfade Transition */
-.hero-slider {
-  position: relative;
-  height: 100vh;
-  width: 100%;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+/* Hero Slider - Cross-Fade Background Images Only */
+.hero-backgrounds {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
 }
 
-/* Dual image layers for seamless crossfade */
-.hero-layer {
+.hero-bg {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  opacity: 0;
   transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: opacity;
 }
 
-.hero-layer-front {
+.hero-bg.active {
   opacity: 1;
-  z-index: 1;
 }
 
-.hero-layer-back {
-  opacity: 0;
-  z-index: 2;
-}
-
-/* Overlay for text readability */
+/* Overlay and content remain stable (NO opacity changes) */
 .hero-overlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(106,27,154,0.85) 100%);
-  z-index: 3;
+  z-index: 1;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 0 1rem;
 }
