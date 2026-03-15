@@ -51,6 +51,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$advance_amount, $provider_share, $platform_fee, $booking_id, $_SESSION['user_id']]);
         
         setAlert("✅ Advance payment of ₹" . number_format($advance_amount, 0) . " received! (₹" . number_format($provider_share, 0) . " to provider, ₹" . number_format($platform_fee, 0) . " platform fee). Wedding date locked.", "success");
+        
+        // Set donation message flag for flash display
+        $_SESSION['show_donation_message'] = true;
+        
         header("Location: " . BASE_URL . "customer/my_bookings.php");
         exit();
         

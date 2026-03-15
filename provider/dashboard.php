@@ -147,10 +147,23 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                         // Calculate time remaining (12 hours from booking)
                         $booking_time = strtotime($booking['booking_date']);
                         $current_time = time();
-                        $time_diff = ($booking_time + 43200) - $current_time; // 43200 seconds = 12 hours
+                        $expiry_time = $booking_time + 43200; // 43200 seconds = 12 hours
+                        
+                        // Ensure we don't show negative time or more than 12 hours
+                        if ($current_time < $booking_time) {
+                            // If booking time is in future, treat it as just made
+                            $time_diff = 43200;
+                        } elseif ($current_time > $expiry_time) {
+                            // Already expired
+                            $time_diff = 0;
+                        } else {
+                            // Normal case: time remaining
+                            $time_diff = $expiry_time - $current_time;
+                        }
+                        
                         $hours = floor($time_diff / 3600);
                         $minutes = floor(($time_diff % 3600) / 60);
-                        $is_urgent = $time_diff < 7200; // Less than 2 hours
+                        $is_urgent = $time_diff < 7200 && $time_diff > 0; // Less than 2 hours
                     ?>
                         <div class="booking-card bg-white rounded-2xl border border-stone-200 p-6 <?= $is_urgent ? 'urgent' : '' ?>">
                             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -387,13 +400,30 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             document.querySelectorAll('.urgent').forEach(card => {
                 const timeLeftEl = card.querySelector('.bg-amber-50');
                 if (timeLeftEl) {
-                    const [hours, minutes] = timeLeftEl.textContent.trim().split('h');
+                    const text = timeLeftEl.textContent.trim();
+                    if (text === 'EXPIRED') return;
+                    
+                    const [hours, minutes] = text.split('h');
                     let h = parseInt(hours);
                     let m = parseInt(minutes);
                     
-                    if (m > 0) m--;
-                    else if (h > 0) { h--; m = 59; }
-                    else { timeLeftEl.textContent = 'EXPIRED'; return; }
+                    if (m > 0) {
+                        m--;
+                    } else if (h > 0) {
+                        h--;
+                        m = 59;
+                    } else {
+                        // Time expired - update to EXPIRED state
+                        timeLeftEl.className = 'mt-3 bg-red-50 text-red-800 px-3 py-1.5 rounded-lg font-medium text-sm';
+                        timeLeftEl.textContent = 'EXPIRED';
+                        return;
+                    }
+                    
+                    // Ensure we don't show more than 12 hours
+                    if (h >= 12) {
+                        h = 11;
+                        m = 59;
+                    }
                     
                     timeLeftEl.innerHTML = `<span class="font-bold">${h}</span>h <span class="font-bold">${m}</span>m left`;
                 }

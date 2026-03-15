@@ -72,6 +72,57 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <?php displayAlert(); ?>
 
+        <?php if (isset($_SESSION['show_donation_message']) && $_SESSION['show_donation_message'] === true): ?>
+            <div id="donationFlash" class="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 p-4 rounded-lg shadow-lg transform transition-all duration-500">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <span class="text-3xl">🙏</span>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-green-800 font-bold text-lg">Thank You for Your Payment!</h3>
+                        <p class="text-green-700 text-sm mt-1">
+                            <strong>Donating 1% for a Healthy Nation</strong> - Your contribution supports healthcare initiatives across India. Together we're making a difference! 🇮🇳
+                        </p>
+                    </div>
+                    <button onclick="closeDonationMessage()" class="ml-auto text-green-500 hover:text-green-700 transition-colors">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <script>
+                // Auto-fade after 8 seconds
+                setTimeout(() => {
+                    const flashEl = document.getElementById('donationFlash');
+                    if (flashEl) {
+                        flashEl.style.opacity = '0';
+                        flashEl.style.transform = 'translateY(-20px)';
+                        setTimeout(() => {
+                            flashEl.remove();
+                        }, 500);
+                    }
+                }, 8000);
+                
+                // Manual close function
+                function closeDonationMessage() {
+                    const flashEl = document.getElementById('donationFlash');
+                    if (flashEl) {
+                        flashEl.style.opacity = '0';
+                        flashEl.style.transform = 'translateY(-20px)';
+                        setTimeout(() => {
+                            flashEl.remove();
+                        }, 500);
+                    }
+                }
+            </script>
+            
+            <?php 
+            // Clear the session flag after displaying
+            unset($_SESSION['show_donation_message']);
+            endif; ?>
+
         <!-- Header -->
         <div class="text-center mb-12">
             <h1 class="heading text-3xl md:text-4xl font-bold text-stone-800">Plan Your Perfect Wedding</h1>
