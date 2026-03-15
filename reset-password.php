@@ -199,7 +199,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             
             <div class="mt-8 pt-6 border-t border-stone-100 text-center">
                 <p class="text-xs text-stone-400">
-                    © 2024 Samaaroh. Made with ❤️ in Nadiad for Gujarati weddings.
+                    © 2026 Samaaroh. Made with ❤️ in Nadiad for Gujarati weddings.
                 </p>
             </div>
         </div>

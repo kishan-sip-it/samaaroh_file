@@ -42,7 +42,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                 </h1>
                 <p class="text-xl text-stone-100 mb-10 max-w-2xl mx-auto drop-shadow-md">
                     Book verified Bagiwalas, caterers, photographers & decorators in one place. 
-                    Nadiad's trusted wedding platform since 2024.
+                    Nadiad's trusted wedding platform since 2026.
                 </p>
                 <div class="flex flex-wrap justify-center gap-4">
                     <?php if (isset($_SESSION['user_id'])): ?>

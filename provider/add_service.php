@@ -294,10 +294,10 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                 <h2 class="heading text-2xl font-bold text-white ml-2">SAMAAROH</h2>
             </div>
             <p class="max-w-2xl mx-auto mb-6">
-                Nadiad's trusted wedding planning platform. Connecting families with verified vendors since 2024.
+                Nadiad's trusted wedding planning platform. Connecting families with verified vendors since 2026.
             </p>
             <p class="text-stone-500 text-sm">
-                &copy; 2024 Samaaroh. Made with ❤️ in Nadiad for Gujarati weddings.<br>
+                &copy; 2026 Samaaroh. Made with ❤️ in Nadiad for Gujarati weddings.<br>
                 BCA Final Year Project by Kishan Marwadi
             </p>
         </div>

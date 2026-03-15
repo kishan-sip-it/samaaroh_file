@@ -114,7 +114,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                     <a href="<?= BASE_URL ?>register.php" class="font-medium text-rose-600 hover:text-rose-700">Register now</a>
                 </p>
                 <p class="text-center text-xs text-stone-400 mt-3">
-                    © 2024 Samaaroh. Made with ❤️ in Nadiad for Gujarati weddings.
+                    © 2026 Samaaroh. Made with ❤️ in Nadiad for Gujarati weddings.
                 </p>
             </div>
         </div>

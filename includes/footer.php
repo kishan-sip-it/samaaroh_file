@@ -30,7 +30,7 @@ require_once __DIR__ . '/../config/config.php';
                 </div>
                 
                 <p class="text-stone-400 mb-4 leading-relaxed">
-                    Nadiad's premier wedding planning platform connecting families with verified vendors since 2024. 
+                    Nadiad's premier wedding planning platform connecting families with verified vendors since 2026. 
                     From traditional bagiwala to luxury venues - we make your dream wedding a reality.
                 </p>
                 
@@ -183,7 +183,7 @@ require_once __DIR__ . '/../config/config.php';
             <!-- Copyright -->
             <div class="text-center lg:text-left">
                 <p class="text-stone-400 text-sm mb-2">
-                    &copy; 2024 Samaaroh Wedding Planning Platform. All rights reserved.
+                    &copy; 2026 Samaaroh Wedding Planning Platform. All rights reserved.
                 </p>
                 <p class="text-stone-500 text-xs">
                     BCA Final Year Project • Kishan Marwadi, Shainy Jadav, Kush Patel • Made with ❤️ in Nadiad

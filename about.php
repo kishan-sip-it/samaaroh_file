@@ -29,7 +29,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         <div class="text-center mb-16">
             <h1 class="heading text-4xl md:text-5xl font-bold text-stone-800">About Samaaroh</h1>
             <p class="text-stone-500 mt-4 max-w-2xl mx-auto">
-                Nadiad's trusted wedding planning platform connecting families with verified vendors since 2024
+                Nadiad's trusted wedding planning platform connecting families with verified vendors since 2026
             </p>
         </div>
 
@@ -40,7 +40,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                     Samaaroh was born from a simple observation: wedding planning in Nadiad is fragmented. Families spend months contacting bagiwalas, party plots, caterers, and photographers separately - often with inconsistent quality and last-minute cancellations.
                 </p>
                 <p class="text-stone-600 mb-4">
-                    Founded in 2024 by Kishan Marwadi (BCA student), Samaaroh solves this by creating a unified platform where verified vendors showcase their services and families book everything in one place - with transparent pricing and reliable 12-hour acceptance workflow.
+                    Founded in 2026 by Kishan Marwadi (BCA student), Samaaroh solves this by creating a unified platform where verified vendors showcase their services and families book everything in one place - with transparent pricing and reliable 12-hour acceptance workflow.
                 </p>
                 <p class="text-stone-600">
                     Today, we proudly serve hundreds of Nadiad families and partner with 50+ verified vendors across Sangath, Mahudi Road, and central Nadiad areas.
