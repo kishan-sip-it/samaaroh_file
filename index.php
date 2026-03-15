@@ -33,7 +33,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     <?php include 'includes/navbar.php'; ?>
 
     <!-- Hero Section with Animation (CORRECT PATH) -->
-    <header class="hero-slider relative overflow-hidden" style="background-image: url('/samaaroh_file/images/banner.jpg')">
+    <header class="hero-slider relative overflow-hidden">
         <div class="hero-overlay"></div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center justify-center h-full text-center">
             <div class="max-w-3xl">
@@ -322,17 +322,55 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
 
     <?php include 'includes/footer.php'; ?>
 
-    <!-- Image Path Validation (CORRECT PATH FOR samaaroh_file) -->
+    <!-- Smooth Hero Slider Script -->
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Only show alert in localhost environment
-        if (window.location.hostname === 'localhost') {
-            const testImg = new Image();
-            testImg.src = '/samaaroh_file/images/banner.jpg';
-            testImg.onerror = () => {
-                alert('⚠️ IMAGE SETUP REQUIRED:\n\nCreate folder: C:\\wamp64\\www\\samaaroh_file\\images\\\n\nAdd these 5 images:\n- banner.jpg\n- image2.jpg\n- image3.jpg\n- image4.jpg\n- image5.jpg\n\n(Download from Unsplash: search "gujarati wedding")');
-            };
-        }
+      const hero = document.querySelector('.hero-slider');
+      if (!hero) return;
+      
+      // Your 5 wedding images (UPDATE PATHS IF NEEDED)
+      const images = [
+        '/samaaroh_file/images/banner.jpg',
+        '/samaaroh_file/images/image2.jpg',
+        '/samaaroh_file/images/image3.jpg',
+        '/samaaroh_file/images/image4.jpg',
+        '/samaaroh_file/images/image5.jpg'
+      ];
+      
+      let currentIndex = 0;
+      const FADE_DURATION = 1800; // 1.8 seconds fade
+      const DISPLAY_DURATION = 5000; // 5 seconds per image
+      
+      // Set initial image
+      hero.style.backgroundImage = `url('${images[0]}')`;
+      hero.style.opacity = '0';
+      
+      // Fade in first image
+      setTimeout(() => { hero.style.opacity = '1'; }, 100);
+      
+      // Start smooth rotation
+      setInterval(() => {
+        // Fade out current
+        hero.style.opacity = '0';
+        
+        setTimeout(() => {
+          // Switch image AFTER fade out completes
+          currentIndex = (currentIndex + 1) % images.length;
+          hero.style.backgroundImage = `url('${images[currentIndex]}')`;
+          
+          // Fade in new image
+          setTimeout(() => { hero.style.opacity = '1'; }, 50);
+        }, FADE_DURATION - 100); // Start new image just before fade completes
+        
+      }, DISPLAY_DURATION + FADE_DURATION);
+      
+      // Optional: Pause on hover (great for demos!)
+      hero.addEventListener('mouseenter', () => {
+        hero.style.animationPlayState = 'paused';
+      });
+      hero.addEventListener('mouseleave', () => {
+        hero.style.animationPlayState = 'running';
+      });
     });
     </script>
 </body>
