@@ -34,6 +34,10 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
 
     <!-- Hero Section with Animation (CORRECT PATH) -->
     <header class="hero-slider relative overflow-hidden">
+        <!-- Dual image layers for seamless crossfade -->
+        <div class="hero-layer hero-layer-front" style="background-image: url('/samaaroh_file/images/banner.jpg')"></div>
+        <div class="hero-layer hero-layer-back" style="background-image: url('/samaaroh_file/images/image2.jpg')"></div>
+        
         <div class="hero-overlay"></div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center justify-center h-full text-center">
             <div class="max-w-3xl">
@@ -317,12 +321,10 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                     <p class="text-stone-600 text-sm">Pre-wedding shoots to wedding day coverage</p>
                 </div>
             </div>
-        </div>
-    </section>
 
     <?php include 'includes/footer.php'; ?>
 
-    <!-- Smooth Hero Slider Script -->
+    <!-- Smooth Hero Slider Script - Crossfade Transition -->
     <script>
     document.addEventListener('DOMContentLoaded', () => {
       const hero = document.querySelector('.hero-slider');
@@ -341,28 +343,41 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
       const FADE_DURATION = 1800; // 1.8 seconds fade
       const DISPLAY_DURATION = 5000; // 5 seconds per image
       
-      // Set initial image
-      hero.style.backgroundImage = `url('${images[0]}')`;
-      hero.style.opacity = '0';
+      // Get the two layers
+      const frontLayer = hero.querySelector('.hero-layer-front');
+      const backLayer = hero.querySelector('.hero-layer-back');
       
-      // Fade in first image
-      setTimeout(() => { hero.style.opacity = '1'; }, 100);
-      
-      // Start smooth rotation
+      // Start smooth crossfade rotation
       setInterval(() => {
-        // Fade out current
-        hero.style.opacity = '0';
+        // Calculate next image index
+        currentIndex = (currentIndex + 1) % images.length;
+        const nextImageIndex = (currentIndex + 1) % images.length;
         
+        // Set next image on the back layer (hidden)
+        backLayer.style.backgroundImage = `url('${images[nextImageIndex]}')`;
+        
+        // Crossfade: fade out front, fade in back
+        frontLayer.style.opacity = '0';
+        backLayer.style.opacity = '1';
+        
+        // Swap layers for next transition
         setTimeout(() => {
-          // Switch image AFTER fade out completes
-          currentIndex = (currentIndex + 1) % images.length;
-          hero.style.backgroundImage = `url('${images[currentIndex]}')`;
+          // Swap classes and reset opacity
+          frontLayer.classList.remove('hero-layer-front');
+          frontLayer.classList.add('hero-layer-back');
+          backLayer.classList.remove('hero-layer-back');
+          backLayer.classList.add('hero-layer-front');
           
-          // Fade in new image
-          setTimeout(() => { hero.style.opacity = '1'; }, 50);
-        }, FADE_DURATION - 100); // Start new image just before fade completes
+          // Reset opacity for next cycle
+          frontLayer.style.opacity = '0';
+          backLayer.style.opacity = '1';
+          
+          // Update references for next cycle
+          const newFrontLayer = hero.querySelector('.hero-layer-front');
+          const newBackLayer = hero.querySelector('.hero-layer-back');
+        }, FADE_DURATION);
         
-      }, DISPLAY_DURATION + FADE_DURATION);
+      }, DISPLAY_DURATION);
       
       // Optional: Pause on hover (great for demos!)
       hero.addEventListener('mouseenter', () => {
