@@ -110,7 +110,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="heading text-3xl md:text-4xl text-center mb-4 text-stone-800">How Samaaroh Works</h2>
             <p class="text-stone-500 text-center max-w-2xl mx-auto mb-16">
-                The stress-free way to plan your Gujarati wedding — from Das Bagiwala to party plot
+                The stress-free way to plan your Gujarati wedding — from bagiwala to party plot
             </p>
             
             <div class="grid md:grid-cols-3 gap-10">
@@ -177,7 +177,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                             </li>
                             <li class="flex items-start">
                                 <span class="text-rose-500 mr-2 mt-1">✓</span>
-                                <span>Das Bagiwala Buggy (2 hours)</span>
+                                <span>bagiwala chariot (2 hours)</span>
                             </li>
                             <li class="flex items-start">
                                 <span class="text-rose-500 mr-2 mt-1">✓</span>
@@ -222,7 +222,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                             </li>
                             <li class="flex items-start">
                                 <span class="text-rose-500 mr-2 mt-1">✓</span>
-                                <span>Das Bagiwala + Ghodi (4 hours)</span>
+                                <span>bagiwala chariot + Ghodi (4 hours)</span>
                             </li>
                             <li class="flex items-start">
                                 <span class="text-rose-500 mr-2 mt-1">✓</span>
@@ -264,7 +264,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                             </li>
                             <li class="flex items-start">
                                 <span class="text-amber-300 mr-2 mt-1">✓</span>
-                                <span>Das Bagiwala Fleet + Celebrity Entertainment</span>
+                                <span>bagiwala chariot Fleet + Celebrity Entertainment</span>
                             </li>
                             <li class="flex items-start">
                                 <span class="text-amber-300 mr-2 mt-1">✓</span>
@@ -292,13 +292,13 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="heading text-3xl md:text-4xl mb-4 text-stone-800">Trusted by Nadiad's Top Vendors</h2>
             <p class="text-stone-500 max-w-2xl mx-auto mb-16">
-                From Das Bagiwala to party plots — verified vendors who understand Gujarati wedding traditions
+                From bagiwala to party plots — verified vendors who understand Gujarati wedding traditions
             </p>
             
             <div class="grid md:grid-cols-4 gap-8">
                 <div class="p-6 bg-stone-50 rounded-2xl">
-                    <div class="text-5xl mb-4">🛺</div>
-                    <h3 class="font-bold text-lg mb-2">Das Bagiwala</h3>
+                    <div class="text-5xl mb-4">�</div>
+                    <h3 class="font-bold text-lg mb-2">bagiwala</h3>
                     <p class="text-stone-600 text-sm">Traditional buggy services with decorated Horses</p>
                 </div>
                 <div class="p-6 bg-stone-50 rounded-2xl">

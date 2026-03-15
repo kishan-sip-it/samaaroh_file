@@ -31,7 +31,7 @@ require_once __DIR__ . '/../config/config.php';
                 
                 <p class="text-stone-400 mb-4 leading-relaxed">
                     Nadiad's premier wedding planning platform connecting families with verified vendors since 2024. 
-                    From traditional Das Bagiwala to luxury venues - we make your dream wedding a reality.
+                    From traditional Dbagiwala to luxury venues - we make your dream wedding a reality.
                 </p>
                 
                 <!-- Professional Stats -->
@@ -89,7 +89,7 @@ require_once __DIR__ . '/../config/config.php';
                 <ul class="space-y-3">
                     <li><a href="<?= BASE_URL ?>#services" class="text-stone-400 hover:text-rose-400 transition-colors duration-300 flex items-center group">
                         <span class="w-1.5 h-1.5 bg-rose-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                        Das Bagiwala Services
+                        Dbagiwala Services
                     </a></li>
                     <li><a href="<?= BASE_URL ?>#services" class="text-stone-400 hover:text-rose-400 transition-colors duration-300 flex items-center group">
                         <span class="w-1.5 h-1.5 bg-rose-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>

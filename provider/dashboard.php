@@ -261,7 +261,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                                         <span class="text-5xl">
                                             <?php 
                                             $icons = [
-                                                'das_bagiwala' => '🛺',
+                                                'das_bagiwala' => '�',
                                                 'party_plot' => '🎪',
                                                 'catering' => '🍲',
                                                 'photography' => '📸',

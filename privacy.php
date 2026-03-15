@@ -154,7 +154,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                 <div class="bg-amber-50 rounded-2xl border border-amber-200 p-6">
                     <h3 class="font-bold text-lg text-amber-800 mb-3">💡 Wedding Planning Tips</h3>
                     <ul class="text-amber-700 text-sm space-y-2">
-                        <li>• Book Das Bagiwala services at least 3 months before your wedding date</li>
+                        <li>• Book Dbagiwala services at least 3 months before your wedding date</li>
                         <li>• Visit party plots in Sangath/Mahudi Road area for best availability</li>
                         <li>• Confirm catering menu 1 month before wedding</li>
                         <li>• Schedule pre-wedding photoshoot 2 weeks before ceremony</li>

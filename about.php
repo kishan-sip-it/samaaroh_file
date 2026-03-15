@@ -37,7 +37,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             <div>
                 <h2 class="heading text-3xl font-bold text-stone-800 mb-6">Our Story</h2>
                 <p class="text-stone-600 mb-4">
-                    Samaaroh was born from a simple observation: wedding planning in Nadiad is fragmented. Families spend months contacting Das Bagiwalas, party plots, caterers, and photographers separately - often with inconsistent quality and last-minute cancellations.
+                    Samaaroh was born from a simple observation: wedding planning in Nadiad is fragmented. Families spend months contacting bagiwalas, party plots, caterers, and photographers separately - often with inconsistent quality and last-minute cancellations.
                 </p>
                 <p class="text-stone-600 mb-4">
                     Founded in 2024 by Kishan Marwadi (BCA student), Samaaroh solves this by creating a unified platform where verified vendors showcase their services and families book everything in one place - with transparent pricing and reliable 12-hour acceptance workflow.
@@ -64,7 +64,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                     </div>
                     <h3 class="font-bold text-xl text-stone-800 mb-3">Verified Vendors Only</h3>
                     <p class="text-stone-600">
-                        Every Das Bagiwala, party plot, and caterer undergoes strict verification. No fake profiles, no last-minute cancellations.
+                        Every bagiwala, party plot, and caterer undergoes strict verification. No fake profiles, no last-minute cancellations.
                     </p>
                 </div>
                 <div class="bg-white rounded-2xl border border-stone-200 p-8 text-center">
@@ -82,7 +82,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                     </div>
                     <h3 class="font-bold text-xl text-stone-800 mb-3">Transparent Pricing</h3>
                     <p class="text-stone-600">
-                        No hidden costs. See exact pricing for Das Bagiwala buggy, party plots, catering before booking.
+                        No hidden costs. See exact pricing for bagiwala chariot, party plots, catering before booking.
                     </p>
                 </div>
             </div>

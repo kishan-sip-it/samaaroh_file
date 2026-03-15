@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="catering" <?= ($_POST['category'] ?? '') === 'catering' ? 'selected' : '' ?>>Catering</option>
                                 <option value="decoration" <?= ($_POST['category'] ?? '') === 'decoration' ? 'selected' : '' ?>>Decoration</option>
                                 <option value="venue" <?= ($_POST['category'] ?? '') === 'venue' ? 'selected' : '' ?>>Venue</option>
-                                <option value="das-bagiwala" <?= ($_POST['category'] ?? '') === 'das-bagiwala' ? 'selected' : '' ?>>Das Bagiwala</option>
+                                <option value="bagiwala" <?= ($_POST['category'] ?? '') === 'bagiwala' ? 'selected' : '' ?>>Das Bagiwala</option>
                                 <option value="entertainment" <?= ($_POST['category'] ?? '') === 'entertainment' ? 'selected' : '' ?>>Entertainment</option>
                                 <option value="makeup" <?= ($_POST['category'] ?? '') === 'makeup' ? 'selected' : '' ?>>Makeup & Beauty</option>
                                 <option value="transport" <?= ($_POST['category'] ?? '') === 'transport' ? 'selected' : '' ?>>Transport</option>

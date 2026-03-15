@@ -55,7 +55,7 @@ $categories = [
     'catering' => 'Catering',
     'decoration' => 'Decoration',
     'venue' => 'Venue',
-    'das-bagiwala' => 'Das Bagiwala',
+    'bagiwala' => 'Das Bagiwala',
     'entertainment' => 'Entertainment',
     'makeup' => 'Makeup & Beauty',
     'transport' => 'Transport',
@@ -172,7 +172,7 @@ $categories = [
                 <div class="service-card bg-white rounded-2xl border border-stone-200 overflow-hidden">
                     <!-- Service Image -->
                     <div class="h-48 bg-gradient-to-br from-rose-100 to-amber-100 relative">
-                        <?php if ($service['image_url']): ?>
+                        <?php if (!empty($service['image_url'])): ?>
                         <img src="<?= BASE_URL . $service['image_url'] ?>" 
                              alt="<?= htmlspecialchars($service['title']) ?>"
                              class="w-full h-full object-cover">
@@ -183,7 +183,7 @@ $categories = [
                                    ($service['category'] === 'catering' ? '🍽️' : 
                                    ($service['category'] === 'decoration' ? '🎨' : 
                                    ($service['category'] === 'venue' ? '🏢' : 
-                                   ($service['category'] === 'das-bagiwala' ? '🐪' : 
+                                   ($service['category'] === 'bagiwala' ? '�' : 
                                    ($service['category'] === 'entertainment' ? '🎭' : 
                                    ($service['category'] === 'makeup' ? '💄' : 
                                    ($service['category'] === 'transport' ? '🚗' : '📦'))))))) ?>

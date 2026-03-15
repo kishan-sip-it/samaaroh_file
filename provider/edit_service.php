@@ -194,7 +194,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                         <label class="block text-sm font-medium text-stone-700 mb-1">Category <span class="text-rose-500">*</span></label>
                         <select name="category" required 
                                 class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent bg-white">
-                            <option value="das_bagiwala" <?= $service['category'] === 'das_bagiwala' ? 'selected' : '' ?>>🛺 Buggy</option>
+                            <option value="das_bagiwala" <?= $service['category'] === 'das_bagiwala' ? 'selected' : '' ?>>🐎 Das Bagiwala (Chariot)</option>
                             <option value="party_plot" <?= $service['category'] === 'party_plot' ? 'selected' : '' ?>>🎪 Party Plot / Venue</option>
                             <option value="catering" <?= $service['category'] === 'catering' ? 'selected' : '' ?>>🍲 Catering</option>
                             <option value="photography" <?= $service['category'] === 'photography' ? 'selected' : '' ?>>📸 Photography & Videography</option>

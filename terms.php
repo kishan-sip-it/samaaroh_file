@@ -43,7 +43,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             <p>By registering an account or using Samaaroh, you confirm you are at least 18 years old and agree to these Terms. If you disagree, please do not use our Service.</p>
             
             <h3>2. Service Description</h3>
-            <p>Samaaroh is a platform connecting customers with wedding service providers (Das Bagiwalas, party plots, caterers, etc.) in Nadiad, Gujarat. We facilitate bookings but are not responsible for service quality, cancellations, or disputes between users.</p>
+            <p>Samaaroh is a platform connecting customers with wedding service providers (Dbagiwalas, party plots, caterers, etc.) in Nadiad, Gujarat. We facilitate bookings but are not responsible for service quality, cancellations, or disputes between users.</p>
             
             <h3>3. User Responsibilities</h3>
             <ul>

@@ -188,7 +188,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                         <select name="category" required 
                                 class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent bg-white">
                             <option value="">Select Category</option>
-                            <option value="das_bagiwala" <?= ($_POST['category'] ?? '') === 'das_bagiwala' ? 'selected' : '' ?>>🛺 Das Bagiwala (Buggy)</option>
+                            <option value="bagiwala" <?= ($_POST['category'] ?? '') === 'bagiwala' ? 'selected' : '' ?>>🐎 Bagiwala (Chariot)</option>
                             <option value="party_plot" <?= ($_POST['category'] ?? '') === 'party_plot' ? 'selected' : '' ?>>🎪 Party Plot / Venue</option>
                             <option value="catering" <?= ($_POST['category'] ?? '') === 'catering' ? 'selected' : '' ?>>🍲 Catering</option>
                             <option value="photography" <?= ($_POST['category'] ?? '') === 'photography' ? 'selected' : '' ?>>📸 Photography & Videography</option>
@@ -268,7 +268,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             <ul class="space-y-2 text-stone-700 text-sm">
                 <li class="flex items-start">
                     <span class="text-amber-500 mr-2 mt-1">✓</span>
-                    <span><strong>Das Bagiwala?</strong> Mention if you serve Sangath, Mahudi Road, or central Nadiad areas</span>
+                    <span><strong>bagiwala?</strong> Mention if you serve Sangath, Mahudi Road, or central Nadiad areas</span>
                 </li>
                 <li class="flex items-start">
                     <span class="text-amber-500 mr-2 mt-1">✓</span>

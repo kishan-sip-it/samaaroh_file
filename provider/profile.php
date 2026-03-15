@@ -172,7 +172,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             <div class="lg:col-span-1">
                 <div class="bg-white rounded-2xl border border-stone-200 p-6 text-center">
                     <div class="w-24 h-24 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-600 text-4xl">
-                        🛺
+                        �
                     </div>
                     <h2 class="font-bold text-xl text-stone-800"><?= htmlspecialchars($user['name']) ?></h2>
                     <p class="text-stone-500 mt-1"><?= htmlspecialchars($user['email']) ?></p>
@@ -253,7 +253,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                             <input type="text" name="name" required 
                                    class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                                    value="<?= htmlspecialchars($user['name']) ?>"
-                                   placeholder="e.g., Das Bagiwala Nadiad">
+                                   placeholder="e.g., Dbagiwala Nadiad">
                         </div>
                         
                         <!-- Email Field (Read-only) -->
