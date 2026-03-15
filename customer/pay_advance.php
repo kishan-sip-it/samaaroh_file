@@ -14,29 +14,57 @@ if ($booking_id <= 0) {
     exit();
 }
 
-// FETCH BOOKING (MUST BE ACCEPTED STATUS)
+// FETCH BOOKING (ACCEPTED OR PENDING STATUS - ALLOW PAYMENT FOR BOTH)
 $stmt = $pdo->prepare("
     SELECT b.*, p.name as package_name, p.total_price 
     FROM bookings b
     LEFT JOIN packages p ON b.package_id = p.id
-    WHERE b.id = ? AND b.customer_id = ? AND b.status = 'accepted'
+    WHERE b.id = ? AND b.customer_id = ? AND b.status IN ('accepted', 'pending')
 ");
 $stmt->execute([$booking_id, $_SESSION['user_id']]);
 $booking = $stmt->fetch();
 
 if (!$booking) {
-    setAlert("Booking not found or already paid", "error");
+    // Debug: Show what's happening
+    $debug_stmt = $pdo->prepare("SELECT status, customer_id FROM bookings WHERE id = ?");
+    $debug_stmt->execute([$booking_id]);
+    $debug_info = $debug_stmt->fetch();
+    
+    if ($debug_info) {
+        setAlert("Booking found but status is '{$debug_info['status']}'. Payment only allowed for accepted/pending bookings.", "error");
+    } else {
+        setAlert("Booking not found. Please try again.", "error");
+    }
     header("Location: " . BASE_URL . "customer/my_bookings.php");
     exit();
 }
 
-$advance_amount = round($booking['total_price'] * 0.4);
+// Calculate payment amounts with fallback
+$booking_price = !empty($booking['total_price']) ? $booking['total_price'] : $booking['service_price'];
+if (empty($booking_price) || $booking_price <= 0) {
+    setAlert("Invalid booking price. Please contact support.", "error");
+    header("Location: " . BASE_URL . "customer/my_bookings.php");
+    exit();
+}
+
+$advance_amount = round($booking_price * 0.4);
 $provider_share = round($advance_amount * 0.75); // 30% of total (75% of advance)
 $platform_fee = round($advance_amount * 0.25); // 10% of total (25% of advance)
 
 // HANDLE PAYMENT SUBMISSION (SIMULATED)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
+        // Debug: Check if booking exists and has correct status
+        $debug_stmt = $pdo->prepare("SELECT * FROM bookings WHERE id = ? AND customer_id = ?");
+        $debug_stmt->execute([$booking_id, $_SESSION['user_id']]);
+        $debug_booking = $debug_stmt->fetch();
+        
+        if (!$debug_booking) {
+            setAlert("Booking not found. Please try again.", "error");
+            header("Location: " . BASE_URL . "customer/my_bookings.php");
+            exit();
+        }
+        
         // UPDATE BOOKING: Status = confirmed, advance paid with split details
         $stmt = $pdo->prepare("
             UPDATE bookings 
@@ -48,19 +76,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 payment_date = NOW()
             WHERE id = ? AND customer_id = ?
         ");
-        $stmt->execute([$advance_amount, $provider_share, $platform_fee, $booking_id, $_SESSION['user_id']]);
+        $result = $stmt->execute([$advance_amount, $provider_share, $platform_fee, $booking_id, $_SESSION['user_id']]);
         
-        setAlert("✅ Advance payment of ₹" . number_format($advance_amount, 0) . " received! (₹" . number_format($provider_share, 0) . " to provider, ₹" . number_format($platform_fee, 0) . " platform fee). Wedding date locked.", "success");
-        
-        // Set donation message flag for flash display
-        $_SESSION['show_donation_message'] = true;
-        
-        header("Location: " . BASE_URL . "customer/my_bookings.php");
-        exit();
+        if ($result) {
+            setAlert("✅ Advance payment of ₹" . number_format($advance_amount, 0) . " received! (₹" . number_format($provider_share, 0) . " to provider, ₹" . number_format($platform_fee, 0) . " platform fee). Wedding date locked.", "success");
+            
+            // Set donation message flag for flash display
+            $_SESSION['show_donation_message'] = true;
+            
+            header("Location: " . BASE_URL . "customer/my_bookings.php");
+            exit();
+        } else {
+            setAlert("Payment update failed. Please try again.", "error");
+        }
         
     } catch (PDOException $e) {
         error_log("Advance payment error: " . $e->getMessage());
-        setAlert("Payment failed. Contact support.", "error");
+        setAlert("Payment failed. Database error: " . $e->getMessage(), "error");
     }
 }
 ?>
