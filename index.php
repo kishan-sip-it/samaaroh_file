@@ -184,7 +184,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                 </div>
                 
                 <!-- Premium Package (Featured) -->
-                <div class="bg-white rounded-3xl overflow-hidden border-2 border-rose-200 relative group">
+                <div class="bg-white rounded-3xl overflow-hidden border-2 border-rose-200 relative group hover:shadow-2xl transition duration-500">
                     <div class="absolute top-0 right-0 bg-rose-600 text-white px-4 py-1.5 text-sm rounded-bl-xl font-bold z-10">
                         MOST POPULAR
                     </div>
