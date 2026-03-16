@@ -46,12 +46,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <style>
         body { font-family: 'Inter', sans-serif; }
         .heading { font-family: 'Playfair Display', serif; }
-        .star-rating { display: flex; gap: 0.5rem; }
+        .star-rating { display: flex; gap: 0.25rem; }
         .star-rating input[type="radio"] { display: none; }
-        .star-rating label { cursor: pointer; font-size: 2rem; color: #d1d5db; transition: color 0.2s; }
-        .star-rating input[type="radio"]:checked ~ label,
-        .star-rating label:hover,
-        .star-rating label:hover ~ label { color: #fbbf24; }
+        .star-rating label { 
+            cursor: pointer; 
+            font-size: 1.5rem; 
+            color: #d1d5db; 
+            transition: all 0.2s ease;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+        }
+        .star-rating label:hover {
+            color: #fbbf24;
+            transform: scale(1.1);
+            background-color: #fef3c7;
+        }
+        .star-rating input[type="radio"]:checked + label {
+            color: #f59e0b;
+            background-color: #fef3c7;
+            transform: scale(1.1);
+        }
+        .star-rating input[type="radio"]:checked ~ label {
+            color: #f59e0b;
+            background-color: #fef3c7;
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body class="bg-stone-50">
@@ -132,18 +151,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <div>
                         <label class="block text-sm font-medium text-stone-700 mb-2">Overall Rating *</label>
                         <div class="star-rating flex-row-reverse justify-end">
-                            <input type="radio" id="star5" name="rating" value="5" required <?= ($_POST['rating'] ?? '') === '5' ? 'checked' : '' ?>>
-                            <label for="star5">⭐</label>
-                            <input type="radio" id="star4" name="rating" value="4" <?= ($_POST['rating'] ?? '') === '4' ? 'checked' : '' ?>>
-                            <label for="star4">⭐</label>
-                            <input type="radio" id="star3" name="rating" value="3" <?= ($_POST['rating'] ?? '') === '3' ? 'checked' : '' ?>>
-                            <label for="star3">⭐</label>
+                            <input type="radio" id="star1" name="rating" value="1" required <?= ($_POST['rating'] ?? '') === '1' ? 'checked' : '' ?>>
+                            <label for="star1">☆</label>
                             <input type="radio" id="star2" name="rating" value="2" <?= ($_POST['rating'] ?? '') === '2' ? 'checked' : '' ?>>
-                            <label for="star2">⭐</label>
-                            <input type="radio" id="star1" name="rating" value="1" <?= ($_POST['rating'] ?? '') === '1' ? 'checked' : '' ?>>
-                            <label for="star1">⭐</label>
+                            <label for="star2">☆</label>
+                            <input type="radio" id="star3" name="rating" value="3" <?= ($_POST['rating'] ?? '') === '3' ? 'checked' : '' ?>>
+                            <label for="star3">☆</label>
+                            <input type="radio" id="star4" name="rating" value="4" <?= ($_POST['rating'] ?? '') === '4' ? 'checked' : '' ?>>
+                            <label for="star4">☆</label>
+                            <input type="radio" id="star5" name="rating" value="5" <?= ($_POST['rating'] ?? '') === '5' ? 'checked' : '' ?>>
+                            <label for="star5">☆</label>
                         </div>
-                        <p class="text-xs text-stone-500 mt-1">Click to rate your experience</p>
+                        <p class="text-xs text-stone-500 mt-1">Click stars to rate (1=Poor, 5=Excellent)</p>
                     </div>
                     
                     <div>
