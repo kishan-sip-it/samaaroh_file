@@ -1,6 +1,7 @@
 <?php
 include '../config/config.php';
 include '../includes/header.php';
+include '../includes/navbar.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -98,7 +99,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
     </style>
 </head>
 <body class="bg-stone-50">
-    <?php include '../includes/navbar.php'; ?>
 
     <!-- Header Section -->
     <section class="bg-gradient-to-r from-rose-600 to-amber-600 text-white py-16">
@@ -333,3 +333,4 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
     </script>
 </body>
 </html>
+    <?php include '../includes/footer.php'; ?>

@@ -222,6 +222,62 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                     <p class="text-xs text-stone-400 mt-1">Enter base price for your service (excluding taxes)</p>
                 </div>
 
+                <!-- Catering Menu Upload - Only show when catering is selected -->
+                <div id="catering_menu_section" class="hidden">
+                    <div class="bg-rose-50 rounded-xl p-6 border border-rose-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-lg text-rose-800">🍽 Add Your Menu</h3>
+                            <span class="text-sm text-rose-600">Required for catering services</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-stone-700 mb-2">Menu Upload Options</label>
+                                
+                                <div class="grid md:grid-cols-2 gap-4">
+                                    <!-- File Upload Option -->
+                                    <div class="border-2 border-dashed border-stone-300 rounded-lg p-4 hover:border-rose-400 transition">
+                                        <div class="text-center">
+                                            <div class="text-3xl mb-2">📁</div>
+                                            <label for="menu_file" class="cursor-pointer text-rose-600 font-medium hover:text-rose-700">
+                                                Upload Menu File
+                                            </label>
+                                            <input type="file" id="menu_file" name="menu_file" 
+                                                   accept=".pdf,.xlsx,.xls,.txt,.doc,.docx"
+                                                   class="hidden">
+                                            <p class="text-xs text-stone-500 mt-1">PDF, Excel, Word, Text files</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Built-in Thali Option -->
+                                    <div class="border-2 border-stone-300 rounded-lg p-4 hover:border-amber-400 transition">
+                                        <div class="text-center">
+                                            <div class="text-3xl mb-2">🍽</div>
+                                            <label class="cursor-pointer text-amber-600 font-medium hover:text-amber-700">
+                                                Use Gujarati Thali
+                                            </label>
+                                            <input type="checkbox" name="use_built_in_thali" value="1" class="hidden">
+                                            <p class="text-xs text-stone-500 mt-1">Traditional thali template</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="file_info" class="hidden">
+                                <div class="bg-white p-3 rounded-lg border border-stone-200">
+                                    <p class="text-sm font-medium text-stone-700">Selected File:</p>
+                                    <p id="file_name" class="text-sm text-stone-600"></p>
+                                </div>
+                            </div>
+                            
+                            <p class="text-xs text-stone-500">
+                                💡 Upload your existing menu or use our built-in Gujarati thali template. 
+                                The menu will be converted to an interactive checklist for customers.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Image Upload -->
                 <div>
                     <label class="block text-sm font-medium text-stone-700 mb-1">Service Image (Optional)</label>
@@ -304,21 +360,84 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     </footer>
 
     <script>
-    // Image preview on selection (enhanced UX)
-    document.getElementById('image')?.addEventListener('change', function(e) {
-        const fileName = e.target.files[0]?.name;
-        if (fileName) {
-            const preview = document.createElement('div');
-            preview.className = 'mt-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 font-medium';
-            preview.textContent = '✓ Selected: ' + fileName;
-            this.closest('div').appendChild(preview);
-            
-            // Remove previous preview if exists
-            const existing = this.closest('div').querySelector('.mt-3.bg-green-50');
-            if (existing && existing !== preview) {
-                existing.remove();
+    // Show/hide catering menu section based on category selection
+    document.addEventListener('DOMContentLoaded', function() {
+        const categorySelect = document.querySelector('select[name="category"]');
+        const cateringSection = document.getElementById('catering_menu_section');
+        
+        function toggleCateringSection() {
+            if (categorySelect.value === 'catering') {
+                cateringSection.classList.remove('hidden');
+                cateringSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                cateringSection.classList.add('hidden');
             }
         }
+        
+        categorySelect.addEventListener('change', toggleCateringSection);
+        
+        // Handle file upload
+        const menuFileInput = document.getElementById('menu_file');
+        const fileInfo = document.getElementById('file_info');
+        const fileName = document.getElementById('file_name');
+        
+        menuFileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                fileName.textContent = e.target.files[0].name;
+                fileInfo.classList.remove('hidden');
+            } else {
+                fileInfo.classList.add('hidden');
+            }
+        });
+        
+        // Handle built-in thali selection
+        const thaliCheckbox = document.querySelector('input[name="use_built_in_thali"]');
+        const thaliLabel = thaliCheckbox.parentElement;
+        
+        thaliLabel.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Toggle checkbox
+            thaliCheckbox.checked = !thaliCheckbox.checked;
+            
+            // Update styling
+            if (thaliCheckbox.checked) {
+                thaliLabel.parentElement.classList.add('bg-amber-100', 'border-amber-500');
+                thaliLabel.parentElement.classList.remove('border-stone-300');
+                
+                // Clear file selection if thali is chosen
+                menuFileInput.value = '';
+                fileInfo.classList.add('hidden');
+            } else {
+                thaliLabel.parentElement.classList.remove('bg-amber-100', 'border-amber-500');
+                thaliLabel.parentElement.classList.add('border-stone-300');
+            }
+        });
+        
+        // Handle file upload area click
+        const fileUploadArea = menuFileInput.closest('.border-dashed');
+        fileUploadArea.addEventListener('click', function(e) {
+            if (!e.target.closest('label')) {
+                menuFileInput.click();
+            }
+        });
+        
+        // Image preview on selection (enhanced UX)
+        document.getElementById('image')?.addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name;
+            if (fileName) {
+                const preview = document.createElement('div');
+                preview.className = 'mt-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 font-medium';
+                preview.textContent = '✓ Selected: ' + fileName;
+                this.closest('div').appendChild(preview);
+                
+                // Remove previous preview if exists
+                const existing = this.closest('div').querySelector('.mt-3.bg-green-50');
+                if (existing && existing !== preview) {
+                    existing.remove();
+                }
+            }
+        });
     });
     </script>
 </body>

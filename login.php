@@ -126,11 +126,6 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         const password = document.getElementById('password');
         password.value = password.value.trim();
     });
-    
-    // Auto-focus email field
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('email').focus();
-    });
     </script>
 </body>
 </html>
