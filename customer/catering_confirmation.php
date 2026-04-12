@@ -27,6 +27,36 @@ $stmt = $pdo->prepare("
 $stmt->execute([$order['service_id']]);
 $service = $stmt->fetch();
 
+// Process selected items - decode JSON if needed
+$selected_items = [];
+if (isset($order['selected_items'])) {
+    // Handle both nested and flat structures
+    if (is_array($order['selected_items'])) {
+        foreach ($order['selected_items'] as $category => $items) {
+            if (is_array($items)) {
+                foreach ($items as $item) {
+                    if (is_string($item)) {
+                        // Decode JSON string
+                        $decoded_item = json_decode($item, true);
+                        if ($decoded_item) {
+                            $selected_items[] = $decoded_item;
+                        }
+                    } elseif (is_array($item)) {
+                        // Already an array (properly formatted)
+                        $selected_items[] = $item;
+                    }
+                }
+            } elseif (is_string($items)) {
+                // Single item as JSON string
+                $decoded_item = json_decode($items, true);
+                if ($decoded_item) {
+                    $selected_items[] = $decoded_item;
+                }
+            }
+        }
+    }
+}
+
 // Process order submission
 $order_placed = false;
 $error_message = '';
@@ -48,21 +78,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             total_cost, 
             status, 
             created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())");
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
         
         $stmt->execute([
             $order['service_id'],
             $_SESSION['user_id'],
             $service['provider_id'],
             $_POST['event_date'],
-            $_POST['event_time'],
+            $_POST['event_time'] ?? '18:00',
             $_POST['venue_location'],
             $_POST['contact_person'],
             $_POST['mobile_number'],
-            $order['special_requests'],
+            $_POST['special_requirements'] ?? '',
             $order['guest_count'],
             json_encode($order['selected_items']),
-            $order['total_price']
+            $order['total_price'],
+            'pending'
         ]);
         
         $order_placed = true;
@@ -75,6 +106,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $error_message = "Error placing order: " . $e->getMessage();
     }
 }
+
+
 ?>
 
 <!DOCTYPE html>
@@ -88,6 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <style>
         body { font-family: 'Inter', sans-serif; }
         .heading { font-family: 'Playfair Display', serif; }
+        html { scroll-behavior: smooth; }
     </style>
 </head>
 <body class="bg-stone-50">
@@ -143,7 +177,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             <h3 class="font-bold text-lg mb-4 text-stone-700">Provider Details</h3>
                             <div class="space-y-2">
                                 <p><strong>Name:</strong> <?= htmlspecialchars($service['provider_name']) ?></p>
-                                <p><strong>Service:</strong> <?= htmlspecialchars($service['service_name']) ?></p>
+                                <p><strong>Service:</strong> <?= htmlspecialchars($service['title'] ?? 'Catering Service') ?></p>
                                 <p><strong>Base Price:</strong> ₹<?= number_format($service['price']) ?>/plate</p>
                             </div>
                         </div>
@@ -151,7 +185,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             <h3 class="font-bold text-lg mb-4 text-stone-700">Order Summary</h3>
                             <div class="space-y-2">
                                 <p><strong>Guests:</strong> <?= $order['guest_count'] ?></p>
-                                <p><strong>Items Selected:</strong> <?= count($order['selected_items']) ?> menu items</p>
+                                <p><strong>Items Selected:</strong> <?= count($selected_items) ?> menu items</p>
                                 <p><strong>Total Cost:</strong> <span class="text-2xl font-bold text-rose-600">₹<?= number_format($order['total_price']) ?></span></p>
                             </div>
                         </div>
@@ -160,18 +194,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <!-- Selected Items -->
                     <h3 class="font-bold text-lg mb-4 text-stone-700">Selected Menu Items</h3>
                     <div class="bg-stone-50 rounded-xl p-6">
-                        <?php foreach ($order['selected_items'] as $item): ?>
-                        <div class="flex justify-between items-center py-2 border-b border-stone-200">
-                            <div>
-                                <p class="font-semibold text-stone-800"><?= htmlspecialchars($item['name']) ?></p>
-                                <p class="text-sm text-stone-600"><?= htmlspecialchars($item['description']) ?></p>
+                        <?php if (!empty($selected_items)): ?>
+                            <?php foreach ($selected_items as $item): ?>
+                            <div class="flex justify-between items-center py-2 border-b border-stone-200">
+                                <div>
+                                    <p class="font-semibold text-stone-800"><?= htmlspecialchars($item['name'] ?? 'Menu Item') ?></p>
+                                    <p class="text-sm text-stone-600"><?= htmlspecialchars($item['description'] ?? 'Delicious dish') ?></p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-rose-600">₹<?= number_format($item['price'] ?? 0) ?></p>
+                                    <p class="text-sm text-stone-500">per plate</p>
+                                </div>
                             </div>
-                            <div class="text-right">
-                                <p class="font-bold text-rose-600">₹<?= number_format($item['price']) ?></p>
-                                <p class="text-sm text-stone-500">per plate</p>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="text-center py-8">
+                                <p class="text-stone-500">No menu items selected</p>
+                                <p class="text-sm text-stone-400 mt-2">Please go back and select menu items</p>
                             </div>
-                        </div>
-                        <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                     
                     <?php if (!empty($order['special_requests'])): ?>

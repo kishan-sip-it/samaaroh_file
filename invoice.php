@@ -69,24 +69,36 @@ $gst_amount = ($booking['total_price'] * 18) / 100; // 18% GST
 $grand_total = $booking['total_price'] + $gst_amount;
 
 // GENERATE INVOICE NUMBER
-$invoice_number = 'SMA-' . date('Y') . '-' . str_pad($booking['id'], 6, '0', STR_PAD_LEFT);
+$invoice_type = $_GET['type'] ?? 'full';
+$invoice_prefix = $invoice_type === 'advance' ? 'ADV' : ($invoice_type === 'final' ? 'FIN' : 'SMA');
+$invoice_number = $invoice_prefix . '-' . date('Y') . '-' . str_pad($booking['id'], 6, '0', STR_PAD_LEFT);
 
-// DETERMINE BILLING PARTY
+// DETERMINE BILLING PARTY - Show both consumer and provider details
 $is_customer_viewing = $_SESSION['role'] === 'customer';
-$billing_party = $is_customer_viewing ? 
-    [
-        'name' => $booking['provider_name'],
-        'email' => $booking['provider_email'],
-        'phone' => $booking['provider_phone'],
-        'address' => $booking['address'] ?? 'N/A',
-        'gst' => $booking['gst_number'] ?? 'N/A'
-    ] : [
-        'name' => $booking['customer_name'],
-        'email' => $booking['customer_email'],
-        'phone' => $booking['customer_phone'],
-        'address' => $booking['address'] ?? 'N/A',
-        'gst' => 'N/A'
-    ];
+$billing_party = [
+    'name' => $is_customer_viewing ? $booking['provider_name'] : $booking['customer_name'],
+    'email' => $is_customer_viewing ? $booking['provider_email'] : $booking['customer_email'],
+    'phone' => $is_customer_viewing ? $booking['provider_phone'] : $booking['customer_phone'],
+    'address' => $booking['address'] ?? 'N/A',
+    'gst' => $booking['gst_number'] ?? 'N/A'
+];
+
+// Service provider details for reference
+$service_provider = [
+    'name' => $booking['provider_name'],
+    'email' => $booking['provider_email'],
+    'phone' => $booking['provider_phone'],
+    'address' => $booking['address'] ?? 'N/A',
+    'gst' => $booking['gst_number'] ?? 'N/A'
+];
+
+// Customer details for reference
+$service_customer = [
+    'name' => $booking['customer_name'],
+    'email' => $booking['customer_email'],
+    'phone' => $booking['customer_phone'],
+    'address' => $booking['address'] ?? 'N/A'
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -128,10 +140,22 @@ $billing_party = $is_customer_viewing ?
             <div class="border-b-2 border-rose-600 pb-6 mb-6">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h1 class="heading text-3xl font-bold text-rose-600 mb-2">INVOICE</h1>
+                        <?php
+                        $invoice_title = $invoice_type === 'advance' ? 'ADVANCE PAYMENT INVOICE' : 
+                                       ($invoice_type === 'final' ? 'FINAL PAYMENT INVOICE' : 'INVOICE');
+                        $invoice_color = $invoice_type === 'advance' ? 'text-blue-600' : 
+                                       ($invoice_type === 'final' ? 'text-green-600' : 'text-rose-600');
+                        ?>
+                        <h1 class="heading text-3xl font-bold <?= $invoice_color ?> mb-2"><?= $invoice_title ?></h1>
                         <p class="text-gray-600">Invoice Number: <?= $invoice_number ?></p>
-                        <p class="text-gray-600">Date: <?= date('d M, Y', strtotime($booking['booking_date'])) ?></p>
+                        <p class="text-gray-600">Date: <?= date('d M, Y') ?></p>
                         <p class="text-gray-600">Booking Date: <?= date('d M, Y', strtotime($booking['booking_date'])) ?></p>
+                        <p class="text-gray-600">Wedding Date: <?= date('d M, Y', strtotime($booking['event_date'])) ?></p>
+                        <?php if ($invoice_type !== 'full'): ?>
+                        <p class="text-sm text-<?= $invoice_color ?> font-medium">
+                            <?= $invoice_type === 'advance' ? '30% Advance Payment' : '70% Final Payment' ?>
+                        </p>
+                        <?php endif; ?>
                     </div>
                     <div class="text-right">
                         <div class="mb-4">
@@ -161,13 +185,41 @@ $billing_party = $is_customer_viewing ?
                 <div>
                     <h3 class="font-semibold text-gray-800 mb-3">Service Provider:</h3>
                     <div class="bg-rose-50 p-4 rounded-lg">
-                        <p class="font-medium text-gray-800"><?= htmlspecialchars($booking['provider_name']) ?></p>
-                        <p class="text-gray-600"><?= htmlspecialchars($booking['provider_email']) ?></p>
-                        <p class="text-gray-600"><?= htmlspecialchars($booking['provider_phone']) ?></p>
-                        <p class="text-gray-600"><?= htmlspecialchars($billing_party['address']) ?></p>
+                        <p class="font-medium text-gray-800"><?= htmlspecialchars($service_provider['name']) ?></p>
+                        <p class="text-gray-600"><?= htmlspecialchars($service_provider['email']) ?></p>
+                        <p class="text-gray-600"><?= htmlspecialchars($service_provider['phone']) ?></p>
+                        <p class="text-gray-600"><?= htmlspecialchars($service_provider['address']) ?></p>
+                        <?php if ($service_provider['gst'] !== 'N/A'): ?>
+                        <p class="text-sm text-gray-600">GST: <?= htmlspecialchars($service_provider['gst']) ?></p>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
+            
+            <!-- Customer Details (for reference) -->
+            <?php if (!$is_customer_viewing): ?>
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg mb-8">
+                <h3 class="font-semibold text-blue-800 mb-3">Customer Details (For Reference):</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-600">Name:</p>
+                        <p class="font-medium text-gray-800"><?= htmlspecialchars($service_customer['name']) ?></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Email:</p>
+                        <p class="font-medium text-gray-800"><?= htmlspecialchars($service_customer['email']) ?></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Phone:</p>
+                        <p class="font-medium text-gray-800"><?= htmlspecialchars($service_customer['phone']) ?></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Address:</p>
+                        <p class="font-medium text-gray-800"><?= htmlspecialchars($service_customer['address']) ?></p>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Service Details -->
             <div class="mb-8">
@@ -210,36 +262,99 @@ $billing_party = $is_customer_viewing ?
                 <div>
                     <h3 class="font-semibold text-gray-800 mb-4">Payment Schedule</h3>
                     <div class="space-y-3">
+                        <?php if ($invoice_type === 'advance'): ?>
+                        <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg border-2 border-blue-200">
+                            <div>
+                                <p class="font-medium text-gray-800">Advance Payment (30%)</p>
+                                <p class="text-sm text-gray-600">Paid - Wedding date locked</p>
+                            </div>
+                            <p class="font-bold text-blue-700">₹<?= number_format($booking['advance_amount'], 2) ?></p>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <p class="font-medium text-gray-800">Remaining Payment (70%)</p>
+                                <p class="text-sm text-gray-600">Due before wedding</p>
+                            </div>
+                            <p class="font-bold text-gray-700">₹<?= number_format($booking['total_price'] - $booking['advance_amount'], 2) ?></p>
+                        </div>
+                        <?php elseif ($invoice_type === 'final'): ?>
+                        <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                            <div>
+                                <p class="font-medium text-gray-800">Advance Payment (30%)</p>
+                                <p class="text-sm text-gray-600">Previously paid</p>
+                            </div>
+                            <p class="font-bold text-green-700">₹<?= number_format($booking['advance_amount'], 2) ?></p>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg border-2 border-green-200">
+                            <div>
+                                <p class="font-medium text-gray-800">Final Payment (70%)</p>
+                                <p class="text-sm text-gray-600">Paid - Booking completed</p>
+                            </div>
+                            <p class="font-bold text-green-700">₹<?= number_format($booking['final_payment_amount'] ?? ($booking['total_price'] - $booking['advance_amount']), 2) ?></p>
+                        </div>
+                        <?php else: ?>
                         <div class="flex justify-between items-center p-3 bg-amber-50 rounded-lg">
                             <div>
-                                <p class="font-medium text-gray-800">Advance Payment (40%)</p>
+                                <p class="font-medium text-gray-800">Advance Payment (30%)</p>
                                 <p class="text-sm text-gray-600">Due at booking confirmation</p>
                             </div>
-                            <p class="font-bold text-amber-700">₹<?= number_format($advance_amount, 2) ?></p>
+                            <p class="font-bold text-amber-700">₹<?= number_format(($booking['total_price'] * 30) / 100, 2) ?></p>
                         </div>
                         <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
                             <div>
-                                <p class="font-medium text-gray-800">Remaining Payment (60%)</p>
+                                <p class="font-medium text-gray-800">Remaining Payment (70%)</p>
                                 <p class="text-sm text-gray-600">Due on wedding day</p>
                             </div>
-                            <p class="font-bold text-blue-700">₹<?= number_format($remaining_amount, 2) ?></p>
+                            <p class="font-bold text-blue-700">₹<?= number_format(($booking['total_price'] * 70) / 100, 2) ?></p>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
                         </div>
                     </div>
                 </div>
                 <div>
                     <h3 class="font-semibold text-gray-800 mb-4">Payment Summary</h3>
                     <div class="bg-gray-50 p-4 rounded-lg space-y-2">
+                        <?php if ($invoice_type === 'advance'): ?>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Advance Amount (30%):</span>
+                            <span class="font-medium">₹<?= number_format($booking['advance_amount'], 2) ?></span>
+                        </div>
+                        <?php elseif ($invoice_type === 'final'): ?>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Final Amount (70%):</span>
+                            <span class="font-medium">₹<?= number_format($booking['final_payment_amount'] ?? ($booking['total_price'] - $booking['advance_amount']), 2) ?></span>
+                        </div>
+                        <?php else: ?>
                         <div class="flex justify-between">
                             <span class="text-gray-600">Subtotal:</span>
                             <span class="font-medium">₹<?= number_format($booking['total_price'], 2) ?></span>
                         </div>
+                        <?php endif; ?>
+                        
+                        <?php if ($invoice_type === 'full'): ?>
                         <div class="flex justify-between">
                             <span class="text-gray-600">GST (18%):</span>
                             <span class="font-medium">₹<?= number_format($gst_amount, 2) ?></span>
                         </div>
+                        <?php endif; ?>
+                        
                         <div class="border-t pt-2 flex justify-between">
-                            <span class="font-semibold text-gray-800">Grand Total:</span>
-                            <span class="font-bold text-xl text-rose-600">₹<?= number_format($grand_total, 2) ?></span>
+                            <?php
+                            if ($invoice_type === 'advance') {
+                                $invoice_total = $booking['advance_amount'];
+                                $total_label = 'Advance Total:';
+                            } elseif ($invoice_type === 'final') {
+                                $invoice_total = $booking['final_payment_amount'] ?? ($booking['total_price'] - $booking['advance_amount']);
+                                $total_label = 'Final Total:';
+                            } else {
+                                $invoice_total = $grand_total;
+                                $total_label = 'Grand Total:';
+                            }
+                            ?>
+                            <span class="font-semibold text-gray-800"><?= $total_label ?></span>
+                            <span class="font-bold text-xl <?= $invoice_color ?>">₹<?= number_format($invoice_total, 2) ?></span>
                         </div>
                     </div>
                 </div>

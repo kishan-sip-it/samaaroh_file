@@ -1,62 +1,42 @@
 <?php
 require_once '../config/config.php';
 
-// AUTH CHECK: Admin only
+// Auth Check - Admin Only
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    setAlert("Admin access required", "error");
+    setAlert("Access denied. Admin privileges required.", "error");
     header("Location: " . BASE_URL . "login.php");
     exit();
 }
 
-// HANDLE INVITATION CREATION
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['invite_email'])) {
-    $email = trim(strtolower($_POST['invite_email']));
-    
-    // VALIDATE EMAIL
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        setAlert("Invalid email address", "error");
-    } 
-    // CHECK IF USER ALREADY EXISTS AS ADMIN
-    elseif ($pdo->prepare("SELECT id FROM users WHERE email = ? AND role = 'admin'")->execute([$email]) && $pdo->prepare("SELECT id FROM users WHERE email = ? AND role = 'admin'")->fetchColumn()) {
-        setAlert("This email is already an admin", "error");
-    } 
-    // CHECK IF INVITATION ALREADY EXISTS
-    elseif ($pdo->prepare("SELECT id FROM admin_invitations WHERE email = ? AND accepted_at IS NULL AND expires_at > NOW()")->execute([$email]) && $pdo->prepare("SELECT id FROM admin_invitations WHERE email = ? AND accepted_at IS NULL AND expires_at > NOW()")->fetchColumn()) {
-        setAlert("Invitation already sent to this email (valid for 7 days)", "error");
-    } 
-    else {
-        // GENERATE SECURE TOKEN
-        $token = bin2hex(random_bytes(32));
-        $expires = date('Y-m-d H:i:s', strtotime('+7 days'));
-        
-        try {
-            $stmt = $pdo->prepare("
-                INSERT INTO admin_invitations (email, token, invited_by, expires_at) 
-                VALUES (?, ?, ?, ?)
-            ");
-            $stmt->execute([$email, $token, $_SESSION['user_id'], $expires]);
-            
-            // FOR DEMO: Show invitation link (in real app, send via email)
-            $_SESSION['invitation_link'] = BASE_URL . "accept_admin_invitation.php?token=" . $token;
-            setAlert("Invitation created! Share the link below with the new admin.", "success");
-        } catch (PDOException $e) {
-            error_log("Invitation error: " . $e->getMessage());
-            setAlert("Failed to create invitation. Please try again.", "error");
-        }
-    }
-}
-
-// FETCH STATS
+// Get platform statistics
 $stats = [
-    'customers' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'customer' AND is_verified = 1")->fetchColumn(),
-    'providers' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'provider' AND is_verified = 1")->fetchColumn(),
-    'services' => $pdo->query("SELECT COUNT(*) FROM services WHERE is_available = 1")->fetchColumn(),
-    'bookings' => $pdo->query("SELECT COUNT(*) FROM bookings")->fetchColumn(),
-    'confirmed' => $pdo->query("SELECT COUNT(*) FROM bookings WHERE status = 'confirmed'")->fetchColumn(),
-    'pending' => $pdo->query("SELECT COUNT(*) FROM bookings WHERE status = 'pending'")->fetchColumn(),
-    'admins' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'admin'")->fetchColumn(),
-    'pending_invitations' => $pdo->query("SELECT COUNT(*) FROM admin_invitations WHERE accepted_at IS NULL AND expires_at > NOW()")->fetchColumn(),
+    'total_users' => $pdo->query("SELECT COUNT(*) as count FROM users")->fetchColumn(),
+    'total_bookings' => $pdo->query("SELECT COUNT(*) as count FROM bookings")->fetchColumn(),
+    'total_services' => $pdo->query("SELECT COUNT(*) as count FROM services")->fetchColumn(),
+    'total_revenue' => $pdo->query("SELECT SUM(total_price) as total FROM bookings WHERE status = 'completed'")->fetchColumn() ?: 0,
+    'pending_bookings' => $pdo->query("SELECT COUNT(*) as count FROM bookings WHERE status = 'pending'")->fetchColumn(),
+    'confirmed_bookings' => $pdo->query("SELECT COUNT(*) as count FROM bookings WHERE status = 'confirmed'")->fetchColumn(),
+    'completed_bookings' => $pdo->query("SELECT COUNT(*) as count FROM bookings WHERE status = 'completed'")->fetchColumn(),
 ];
+
+// Get recent bookings
+$recent_bookings = $pdo->query("
+    SELECT b.*, s.title as service_title, u.name as customer_name, p.name as provider_name
+    FROM bookings b
+    JOIN services s ON b.service_id = s.id
+    JOIN users u ON b.customer_id = u.id
+    JOIN users p ON s.provider_id = p.id
+    ORDER BY b.id DESC
+    LIMIT 10
+")->fetchAll();
+
+// Get recent users
+$recent_users = $pdo->query("
+    SELECT id, name, email, role, is_verified, created_at
+    FROM users 
+    ORDER BY id DESC
+    LIMIT 10
+")->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -69,209 +49,210 @@ $stats = [
     <style>
         body { font-family: 'Inter', sans-serif; }
         .heading { font-family: 'Playfair Display', serif; }
-        .invitation-card { transition: transform 0.3s; }
-        .invitation-card:hover { transform: translateY(-2px); }
+        html { scroll-behavior: smooth; }
     </style>
-    <style>
-/* Minimal fallback styles for offline demo */
-body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-.btn { background: #e53e3e; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; display: inline-block; }
-.card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.alert { padding: 12px; border-radius: 4px; margin: 15px 0; }
-.alert-error { background: #fee; border-left: 4px solid #c53030; color: #c53030; }
-.alert-success { background: #efe; border-left: 4px solid #38a169; color: #38a169; }
-</style>
 </head>
 <body class="bg-stone-50 min-h-screen">
-    <?php include '../includes/navbar.php'; ?>
-    
-    <main class="max-w-7xl mx-auto px-4 py-8">
-        <?php displayAlert(); ?>
-        
-        <!-- Invitation Link (if just created) -->
-        <?php if (isset($_SESSION['invitation_link'])): ?>
-            <div class="bg-amber-50 border-l-4 border-amber-400 p-4 mb-8 rounded-r-lg">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div class="ml-3 flex-1">
-                        <p class="text-sm text-amber-700 font-medium">
-                            ✨ Invitation Link (Valid for 7 days):
-                        </p>
-                        <div class="mt-2 bg-white p-3 rounded-lg font-mono text-xs break-all">
-                            <?php echo htmlspecialchars($_SESSION['invitation_link']); ?>
-                        </div>
-                        <p class="mt-2 text-xs text-amber-600">
-                            ⚠️ For demo purposes only. In production, this would be sent via email.
-                        </p>
-                    </div>
+
+<?php include '../includes/navbar.php'; ?>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <?php displayAlert(); ?>
+
+    <!-- Welcome Header -->
+    <div class="mb-8">
+        <h1 class="heading text-3xl font-bold text-stone-800">
+            Admin Dashboard 👑
+        </h1>
+        <p class="text-stone-600 mt-2">
+            Manage Samaaroh wedding platform - monitor bookings, users, and platform performance.
+        </p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl border border-stone-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-rose-600 text-xl">👥</span>
                 </div>
-            </div>
-            <?php unset($_SESSION['invitation_link']); ?>
-        <?php endif; ?>
-
-        <div class="text-center mb-10">
-            <h1 class="heading text-4xl font-bold text-stone-800">Admin Dashboard</h1>
-            <p class="text-stone-500">Nadiad Wedding Platform Management</p>
-        </div>
-        
-        <!-- Admin Actions -->
-        <section class="mb-12">
-            <h2 class="text-xl font-bold text-stone-800 mb-6">Admin Actions</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <a href="<?= BASE_URL ?>admin/invite_admin.php" class="bg-white rounded-2xl border border-stone-200 p-6 hover:shadow-lg transition group">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center group-hover:bg-amber-200 transition">
-                            <span class="text-2xl">👑</span>
-                        </div>
-                        <h3 class="font-bold text-lg text-stone-800">Invite Admin</h3>
-                    </div>
-                    <p class="text-stone-600 text-sm">Add new admin members via email invitation</p>
-                </a>
-                
-                <a href="<?= BASE_URL ?>admin/manage_users.php" class="bg-white rounded-2xl border border-stone-200 p-6 hover:shadow-lg transition group">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition">
-                            <span class="text-2xl">👥</span>
-                        </div>
-                        <h3 class="font-bold text-lg text-stone-800">Manage Users</h3>
-                    </div>
-                    <p class="text-stone-600 text-sm">View and manage all customer & provider accounts</p>
-                </a>
-                
-                <a href="<?= BASE_URL ?>admin/user_reports.php" class="bg-white rounded-2xl border border-stone-200 p-6 hover:shadow-lg transition group">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200 transition">
-                            <span class="text-2xl">📊</span>
-                        </div>
-                        <h3 class="font-bold text-lg text-stone-800">User Reports</h3>
-                    </div>
-                    <p class="text-stone-600 text-sm">Download user analytics in PDF & Excel format</p>
-                </a>
-                
-                <a href="<?= BASE_URL ?>admin/view_reports.php" class="bg-white rounded-2xl border border-stone-200 p-6 hover:shadow-lg transition group">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center group-hover:bg-rose-200 transition">
-                            <span class="text-2xl">�</span>
-                        </div>
-                        <h3 class="font-bold text-lg text-stone-800">View Reports</h3>
-                    </div>
-                    <p class="text-stone-600 text-sm">Monitor user reports and feedback</p>
-                </a>
-            </div>
-        </section>
-
-        <!-- Stats Overview -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <div class="bg-white rounded-xl p-6 border border-stone-200 text-center shadow-sm">
-                <div class="text-4xl font-bold text-rose-600 mb-2"><?= $stats['customers'] ?></div>
-                <div class="text-stone-500">Verified Customers</div>
-            </div>
-            <div class="bg-white rounded-xl p-6 border border-stone-200 text-center shadow-sm">
-                <div class="text-4xl font-bold text-amber-600 mb-2"><?= $stats['providers'] ?></div>
-                <div class="text-stone-500">Verified Providers</div>
-            </div>
-            <div class="bg-white rounded-xl p-6 border border-stone-200 text-center shadow-sm">
-                <div class="text-4xl font-bold text-green-600 mb-2"><?= $stats['services'] ?></div>
-                <div class="text-stone-500">Active Services</div>
-            </div>
-            <div class="bg-white rounded-xl p-6 border border-stone-200 text-center shadow-sm">
-                <div class="text-4xl font-bold text-blue-600 mb-2"><?= $stats['bookings'] ?></div>
-                <div class="text-stone-500">Total Bookings</div>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800"><?= number_format($stats['total_users']) ?></p>
+                    <p class="text-stone-600 text-sm">Total Users</p>
+                </div>
             </div>
         </div>
         
-        <!-- Admin Management Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            <!-- Current Admins -->
-            <div class="bg-white rounded-xl p-6 border border-stone-200">
-                <div class="flex items-center mb-4">
-                    <div class="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
-                        <span class="text-rose-600 text-xl">👑</span>
-                    </div>
-                    <h2 class="font-bold text-xl text-stone-800 ml-3">Current Admins</h2>
+        <div class="bg-white rounded-xl border border-stone-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-green-600 text-xl">📋</span>
                 </div>
-                
-                <div class="space-y-3">
-                    <?php
-                    $admins = $pdo->query("SELECT id, name, email, created_at FROM users WHERE role = 'admin' ORDER BY created_at DESC")->fetchAll();
-                    foreach ($admins as $admin):
-                    ?>
-                    <div class="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
-                        <div>
-                            <div class="font-medium text-stone-800"><?= htmlspecialchars($admin['name']) ?></div>
-                            <div class="text-sm text-stone-500"><?= htmlspecialchars($admin['email']) ?></div>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800"><?= number_format($stats['total_bookings']) ?></p>
+                    <p class="text-stone-600 text-sm">Total Bookings</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-stone-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-amber-600 text-xl">🎪</span>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800"><?= number_format($stats['total_services']) ?></p>
+                    <p class="text-stone-600 text-sm">Total Services</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-stone-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-blue-600 text-xl">💰</span>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800">₹<?= number_format($stats['total_revenue'], 0) ?></p>
+                    <p class="text-stone-600 text-sm">Total Revenue</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Status Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-amber-50 rounded-xl border border-amber-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-amber-600 text-xl">⏰</span>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800"><?= number_format($stats['pending_bookings']) ?></p>
+                    <p class="text-stone-600 text-sm">Pending Bookings</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-green-50 rounded-xl border border-green-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-green-600 text-xl">✅</span>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800"><?= number_format($stats['confirmed_bookings']) ?></p>
+                    <p class="text-stone-600 text-sm">Confirmed Bookings</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-stone-100 rounded-xl border border-stone-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-stone-600 text-xl">🎉</span>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800"><?= number_format($stats['completed_bookings']) ?></p>
+                    <p class="text-stone-600 text-sm">Completed Bookings</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Bookings -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white rounded-2xl border border-stone-200 p-6">
+            <h2 class="heading text-xl font-bold text-stone-800 mb-6">Recent Bookings</h2>
+            
+            <?php if (empty($recent_bookings)): ?>
+                <div class="text-center py-8">
+                    <p class="text-stone-500">No bookings yet</p>
+                </div>
+            <?php else: ?>
+                <div class="space-y-4">
+                    <?php foreach (array_slice($recent_bookings, 0, 5) as $booking): ?>
+                        <div class="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
+                            <div>
+                                <p class="font-medium text-stone-900"><?= htmlspecialchars($booking['service_title']) ?></p>
+                                <p class="text-sm text-stone-600"><?= htmlspecialchars($booking['customer_name']) ?> → <?= htmlspecialchars($booking['provider_name']) ?></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-stone-900">₹<?= number_format($booking['total_price'], 0) ?></p>
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                    <?php
+                                    switch($booking['status']) {
+                                        case 'confirmed': echo 'bg-green-100 text-green-800'; break;
+                                        case 'pending': echo 'bg-amber-100 text-amber-800'; break;
+                                        case 'cancelled': echo 'bg-red-100 text-red-800'; break;
+                                        default: echo 'bg-stone-100 text-stone-800';
+                                    }
+                                    ?>">
+                                    <?= ucfirst(str_replace('_', ' ', $booking['status'])) ?>
+                                </span>
+                            </div>
                         </div>
-                        <div class="text-xs text-stone-400">
-                            <?= date('M d, Y', strtotime($admin['created_at'])) ?>
-                        </div>
-                    </div>
                     <?php endforeach; ?>
                 </div>
-                
-                <div class="mt-4 pt-4 border-t border-stone-100">
-                    <div class="flex justify-between text-sm">
-                        <span class="text-stone-500">Total Admins:</span>
-                        <span class="font-bold text-rose-600"><?= count($admins) ?></span>
-                    </div>
-                </div>
-            </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Recent Users -->
+        <div class="bg-white rounded-2xl border border-stone-200 p-6">
+            <h2 class="heading text-xl font-bold text-stone-800 mb-6">Recent Users</h2>
             
-            <!-- Pending Invitations -->
-            <div class="bg-white rounded-xl p-6 border border-stone-200">
-                <div class="flex items-center mb-4">
-                    <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                        <span class="text-amber-600 text-xl">📧</span>
-                    </div>
-                    <h2 class="font-bold text-xl text-stone-800 ml-3">Pending Invitations</h2>
+            <?php if (empty($recent_users)): ?>
+                <div class="text-center py-8">
+                    <p class="text-stone-500">No users yet</p>
                 </div>
-                
+            <?php else: ?>
                 <div class="space-y-3">
-                    <?php
-                    $pending = $pdo->query("
-                        SELECT ai.email, ai.token, ai.expires_at, ai.created_at, u.name as invited_by_name
-                        FROM admin_invitations ai
-                        LEFT JOIN users u ON ai.invited_by = u.id
-                        WHERE ai.accepted_at IS NULL AND ai.expires_at > NOW()
-                        ORDER BY ai.created_at DESC
-                    ")->fetchAll();
-                    
-                    if (empty($pending)):
-                    ?>
-                    <div class="text-center py-6 text-stone-500">
-                        <span class="text-2xl">�</span>
-                        <p class="mt-2">No pending invitations</p>
-                    </div>
-                    <?php else: ?>
-                        <?php foreach ($pending as $inv): ?>
-                        <div class="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
+                    <?php foreach (array_slice($recent_users, 0, 5) as $user): ?>
+                        <div class="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
                             <div>
-                                <div class="font-medium text-stone-800"><?= htmlspecialchars($inv['email']) ?></div>
-                                <div class="text-sm text-stone-500">Invited by <?= htmlspecialchars($inv['invited_by_name']) ?></div>
-                                <div class="text-xs text-amber-600">Expires: <?= date('M d, Y H:i', strtotime($inv['expires_at'])) ?></div>
+                                <p class="font-medium text-stone-900"><?= htmlspecialchars($user['name']) ?></p>
+                                <p class="text-sm text-stone-600"><?= htmlspecialchars($user['email']) ?></p>
                             </div>
-                            <div class="text-xs text-stone-400">
-                                <?= date('M d', strtotime($inv['created_at'])) ?>
+                            <div class="text-right">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                    <?= $user['role'] === 'admin' ? 'bg-purple-100 text-purple-800' : ($user['role'] === 'provider' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800') ?>">
+                                    <?= ucfirst($user['role']) ?>
+                                </span>
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                    <?= $user['is_verified'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' ?>">
+                                    <?= $user['is_verified'] ? 'Verified' : 'Unverified' ?>
+                                </span>
                             </div>
                         </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                    <?php endforeach; ?>
                 </div>
-                
-                <div class="mt-4 pt-4 border-t border-stone-100">
-                    <div class="flex justify-between text-sm">
-                        <span class="text-stone-500">Pending:</span>
-                        <span class="font-bold text-amber-600"><?= count($pending) ?></span>
-                    </div>
-                </div>
-            </div>
+            <?php endif; ?>
         </div>
-        
-     </main>
-    
-    <?php include '../includes/footer.php'; ?>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-stone-900 rounded-2xl p-8 text-white">
+        <h2 class="heading text-2xl font-bold text-white mb-6">Quick Actions</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <a href="<?= BASE_URL ?>admin/manage_users.php" 
+               class="block bg-white hover:bg-stone-100 text-stone-900 p-6 rounded-xl text-center font-semibold transition">
+                <span class="text-2xl mb-2">👥</span>
+                <p>Manage Users</p>
+            </a>
+            <a href="<?= BASE_URL ?>admin/manage_services.php" 
+               class="block bg-white hover:bg-stone-100 text-stone-900 p-6 rounded-xl text-center font-semibold transition">
+                <span class="text-2xl mb-2">🎪</span>
+                <p>Manage Services</p>
+            </a>
+            <a href="<?= BASE_URL ?>admin/manage_bookings.php" 
+               class="block bg-white hover:bg-stone-100 text-stone-900 p-6 rounded-xl text-center font-semibold transition">
+                <span class="text-2xl mb-2">📋</span>
+                <p>Manage Bookings</p>
+            </a>
+        </div>
+    </div>
+</main>
+
+<?php include '../includes/footer.php'; ?>
+
 </body>
 </html>

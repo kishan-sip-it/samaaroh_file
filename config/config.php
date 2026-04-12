@@ -1,21 +1,18 @@
 <?php
-// START SESSION FIRST (MUST BE ABSOLUTELY FIRST)
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+session_start();
 
-// DATABASE CONFIG
+// Database Configuration
 $host = 'localhost';
-$db   = 'samaaroh_db_final';
+$db = 'samaaroh_db_final';
 $user = 'root';
 $pass = 'kishan';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
 $options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES   => false,
+    PDO::ATTR_EMULATE_PREPARES => false,
 ];
 
 try {
@@ -24,14 +21,12 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
-// PATH CONSTANTS (WINDOWS-SAFE)
+// Base URL Configuration
 define('BASE_URL', '/samaaroh_file/');
-define('ROOT_PATH', __DIR__ . '/../'); // PHYSICAL PATH
-define('UPLOADS_DIR', ROOT_PATH . 'uploads/'); // FOR UPLOADS
-define('UPLOADS_URL', BASE_URL . 'uploads/'); // FOR <img> TAGS
-define('IMAGES_URL', BASE_URL . 'images/');
+define('UPLOADS_URL', BASE_URL . 'uploads/');
+define('UPLOADS_DIR', __DIR__ . '/../uploads/');
 
-// ✅ CRITICAL: ALERT HELPER FUNCTIONS (WAS MISSING!)
+// Alert Helper Functions
 function setAlert($msg, $type = 'info') {
     $_SESSION['alert'] = ['msg' => $msg, 'type' => $type];
 }

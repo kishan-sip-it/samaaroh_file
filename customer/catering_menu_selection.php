@@ -1,6 +1,5 @@
 <?php
 include '../config/config.php';
-include '../includes/header.php';
 include '../includes/navbar.php';
 
 // Check if user is logged in
@@ -9,12 +8,15 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Handle service_id from URL parameter
+$service_id = isset($_GET['service_id']) ? $_GET['service_id'] : null;
+
 // Get catering services
 $stmt = $pdo->prepare("
     SELECT s.*, u.name as provider_name, u.phone as provider_phone, u.email as provider_email 
     FROM services s 
     JOIN users u ON s.provider_id = u.id 
-    WHERE s.service_type = 'catering' AND s.status = 'available' 
+    WHERE s.category = 'catering' AND s.is_available = 1 
     ORDER BY s.created_at DESC
 ");
 $stmt->execute();
@@ -33,13 +35,45 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
             SELECT s.*, u.name as provider_name 
             FROM services s 
             JOIN users u ON s.provider_id = u.id 
-            WHERE s.id = ? AND s.service_type = 'catering' AND s.status = 'available'
+            WHERE s.id = ? AND s.category = 'catering' AND s.is_available = 1
         ");
         $stmt->execute([$service_id]);
         $selected_service = $stmt->fetch();
         
         if ($selected_service) {
-            $menu_data = json_decode($selected_service['menu_data'], true);
+            // Get menu data from database or use default thali
+            if (!empty($selected_service['menu_data'])) {
+                $menu_data = json_decode($selected_service['menu_data'], true);
+                $menu_type = 'custom';
+            } else {
+                // Default Gujarati Thali menu - Fixed Menu
+                $menu_data = [
+                    'categories' => [
+                        'farsan' => [
+                            ['name' => 'Fafda & Jalebi', 'price' => 80, 'description' => 'Crispy fafda with sweet jalebi'],
+                            ['name' => 'Gathiya', 'price' => 60, 'description' => 'Spicy gram flour crisps'],
+                            ['name' => 'Khaman', 'price' => 70, 'description' => 'Soft steamed gram flour cakes']
+                        ],
+                        'main_course' => [
+                            ['name' => 'Roti/Phulka', 'price' => 15, 'description' => 'Freshly made wheat rotis'],
+                            ['name' => 'Dal Tadka', 'price' => 120, 'description' => 'Tempered yellow lentils'],
+                            ['name' => 'Mixed Vegetable Sabzi', 'price' => 150, 'description' => 'Seasonal mixed vegetables'],
+                            ['name' => 'Kadhi', 'price' => 100, 'description' => 'Gujarati kadhi with gram flour']
+                        ],
+                        'sweet_dish' => [
+                            ['name' => 'Gulab Jamun', 'price' => 50, 'description' => 'Sweet milk dumplings in syrup'],
+                            ['name' => 'Shrikhand', 'price' => 80, 'description' => 'Sweet strained yogurt dessert'],
+                            ['name' => 'Basundi', 'price' => 90, 'description' => 'Thickened sweet milk']
+                        ],
+                        'pickle_accompaniment' => [
+                            ['name' => 'Mango Pickle', 'price' => 30, 'description' => 'Traditional mango achar'],
+                            ['name' => 'Green Chutney', 'price' => 20, 'description' => 'Fresh coriander chutney'],
+                            ['name' => 'Salad', 'price' => 25, 'description' => 'Fresh cucumber tomato salad']
+                        ]
+                    ]
+                ];
+                $menu_type = 'fixed';
+            }
             $_SESSION['selected_service_id'] = $service_id;
         }
     } elseif ($_POST['action'] === 'submit_order') {
@@ -61,6 +95,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
         }
     }
 }
+
+// Now include header and navbar after all PHP logic
+include '../includes/header.php';
+
 ?>
 
 <!DOCTYPE html>
@@ -74,33 +112,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
     <style>
         body { font-family: 'Inter', sans-serif; }
         .heading { font-family: 'Playfair Display', serif; }
-        .menu-item { transition: all 0.3s ease; }
-        .menu-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .checkbox-custom { 
-            position: relative; 
-            width: 20px; 
-            height: 20px; 
-            border: 2px solid #d1d5db; 
-            border-radius: 4px; 
-            transition: all 0.3s ease;
-        }
-        .checkbox-custom.checked { 
-            background-color: #dc2626; 
-            border-color: #dc2626;
-        }
-        .checkbox-custom.checked:after { 
-            content: '✓'; 
-            color: white; 
-            position: absolute; 
-            top: -2px; 
-            left: 3px; 
-            font-size: 12px; 
-        }
+        html { scroll-behavior: smooth; }
     </style>
 </head>
 <body class="bg-stone-50">
 
-    <!-- Header Section -->
+    <?php include '../includes/navbar.php'; ?>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <section class="bg-gradient-to-r from-rose-600 to-amber-600 text-white py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 class="heading text-4xl md:text-5xl font-bold mb-4">Select Your Catering Menu</h1>
@@ -128,7 +147,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
                         <div class="p-6">
                             <div class="flex justify-between items-start mb-4">
                                 <div>
-                                    <h3 class="font-bold text-xl text-stone-800"><?= htmlspecialchars($service['service_name']) ?></h3>
+                                    <h3 class="font-bold text-xl text-stone-800"><?= htmlspecialchars($service['title']) ?></h3>
                                     <p class="text-stone-600 text-sm">by <?= htmlspecialchars($service['provider_name']) ?></p>
                                 </div>
                                 <div class="text-right">
@@ -183,9 +202,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
                             <p class="text-sm text-stone-500">per plate</p>
                         </div>
                         <div>
-                            <h3 class="font-bold text-lg text-stone-800 mb-2">Service Type</h3>
-                            <p class="text-xl font-semibold text-stone-800">Traditional Catering</p>
-                            <p class="text-sm text-stone-500">Authentic Gujarati Menu</p>
+                            <h3 class="font-bold text-lg text-stone-800 mb-2">Menu Type</h3>
+                            <?php if ($menu_type === 'fixed'): ?>
+                                <p class="text-xl font-semibold text-stone-800">Fixed Gujarati Thali</p>
+                                <p class="text-sm text-amber-600 font-medium">This caterer only provides fixed dishes</p>
+                            <?php else: ?>
+                                <p class="text-xl font-semibold text-stone-800">Custom Menu</p>
+                                <p class="text-sm text-stone-500">Customizable menu selection</p>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -198,6 +222,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
                     
                     <?php if (isset($menu_data['categories'])): ?>
                         <!-- Built-in Thali Structure -->
+                        <?php if ($menu_type === 'fixed'): ?>
+                            <!-- Fixed Menu - Show message -->
+                            <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 mb-6">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <span class="text-2xl">🍽</span>
+                                    <div>
+                                        <h3 class="font-bold text-lg text-amber-800">Fixed Gujarati Thali Menu</h3>
+                                        <p class="text-amber-700 text-sm">This caterer only provides fixed dishes - all items included in the thali</p>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                        
                         <?php foreach ($menu_data['categories'] as $category => $items): ?>
                         <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
                             <h2 class="heading text-2xl font-bold mb-6 text-stone-800">
@@ -208,11 +245,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
                                 <?php foreach ($items as $index => $item): ?>
                                 <div class="menu-item bg-stone-50 rounded-xl p-6 border border-stone-200">
                                     <div class="flex items-start space-x-3">
-                                        <input type="checkbox" 
-                                               name="selected_items[<?= $category ?>][<?= $index ?>]" 
-                                               value="<?= json_encode($item) ?>"
-                                               onchange="updateTotal()"
-                                               class="mt-1">
+                                        <?php if ($menu_type === 'fixed'): ?>
+                                            <!-- Fixed Menu - Show checkmark instead of checkbox -->
+                                            <div class="mt-1">
+                                                <div class="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                                    <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <input type="hidden" name="selected_items[<?= $category ?>][<?= $index ?>]" value="<?= json_encode($item) ?>">
+                                        <?php else: ?>
+                                            <!-- Custom Menu - Show checkbox for selection -->
+                                            <input type="checkbox" 
+                                                   name="selected_items[<?= $category ?>][<?= $index ?>]" 
+                                                   value="<?= json_encode($item) ?>"
+                                                   onchange="updateTotal()"
+                                                   class="mt-1">
+                                        <?php endif; ?>
                                         <div class="flex-1">
                                             <h4 class="font-bold text-lg text-stone-800 mb-2">
                                                 <?= htmlspecialchars($item['name']) ?>
@@ -308,29 +358,70 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
     <?php include '../includes/footer.php'; ?>
 
     <script>
+    // Update total calculation for fixed menu
     function updateTotal() {
         const guestCount = parseInt(document.getElementById('guest_count').value) || 50;
         let totalPrice = 0;
-        const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+        const menuType = '<?= $menu_type ?? 'custom' ?>';
         
-        checkboxes.forEach(checkbox => {
-            if (checkbox.checked) {
-                try {
-                    const item = JSON.parse(checkbox.value);
-                    totalPrice += item.price * guestCount;
-                } catch (e) {
-                    console.error('Error parsing item data:', e);
+        if (menuType === 'fixed') {
+            // For fixed menu, calculate total of all items
+            const allItems = document.querySelectorAll('input[type="hidden"][name^="selected_items"]');
+            allItems.forEach(hiddenInput => {
+                if (hiddenInput.value) {
+                    try {
+                        const item = JSON.parse(hiddenInput.value);
+                        totalPrice += item.price * guestCount;
+                    } catch (e) {
+                        console.error('Error parsing item data:', e);
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            // For custom menu, calculate only checked items
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    try {
+                        const item = JSON.parse(checkbox.value);
+                        totalPrice += item.price * guestCount;
+                    } catch (e) {
+                        console.error('Error parsing item data:', e);
+                    }
+                }
+            });
+        }
         
         document.getElementById('total_display').textContent = '₹' + totalPrice.toLocaleString('en-IN');
         document.getElementById('total_price').value = totalPrice;
     }
 
     // Initialize total on page load
-    document.addEventListener('DOMContentLoaded', updateTotal);
+    document.addEventListener('DOMContentLoaded', function() {
+        updateTotal();
+        
+        // Auto-select service if service_id is in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const serviceId = urlParams.get('service_id');
+        if (serviceId) {
+            // Find and click the service selection button
+            const serviceButtons = document.querySelectorAll('form[method="POST"] button[type="submit"]');
+            serviceButtons.forEach(button => {
+                const form = button.closest('form');
+                const hiddenServiceId = form.querySelector('input[name="service_id"]');
+                if (hiddenServiceId && hiddenServiceId.value === serviceId) {
+                    button.click();
+                }
+            });
+        }
+        
+        // For fixed menu, ensure all items are included in total from start
+        const menuType = '<?= $menu_type ?? 'custom' ?>';
+        if (menuType === 'fixed') {
+            // Force update total for fixed menu
+            setTimeout(updateTotal, 100);
+        }
+    });
     </script>
 </body>
 </html>
-    <?php include '../includes/footer.php'; ?>

@@ -1,9 +1,8 @@
 <?php
 require_once '../config/config.php';
 
-// Auth Check
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'customer') {
-    setAlert("Please login to access your dashboard", "error");
+    setAlert("Login required", "error");
     header("Location: " . BASE_URL . "login.php");
     exit();
 }
@@ -15,63 +14,59 @@ if ($booking_id <= 0) {
     exit();
 }
 
-// Fetch booking details
+// FETCH BOOKING (PAID STATUS ONLY)
 $stmt = $pdo->prepare("
-    SELECT b.*, s.title as service_title, s.category, u.name as provider_name
+    SELECT b.*, 
+           p.name as package_name, 
+           p.total_price as package_total_price,
+           s.price as service_price,
+           s.title as service_title
     FROM bookings b
+    LEFT JOIN packages p ON b.package_id = p.id
     LEFT JOIN services s ON b.service_id = s.id
-    LEFT JOIN users u ON s.provider_id = u.id
-    WHERE b.id = ? AND b.customer_id = ?
+    WHERE b.id = ? AND b.customer_id = ? AND b.status = 'paid'
 ");
 $stmt->execute([$booking_id, $_SESSION['user_id']]);
 $booking = $stmt->fetch();
 
 if (!$booking) {
-    setAlert("Booking not found", "error");
-    header("Location: " . BASE_URL . "customer/my_bookings.php");
-    exit();
-}
-
-// Check if booking is in correct status for advance payment
-if ($booking['status'] !== 'confirmed' && $booking['status'] !== 'accepted') {
-    setAlert("Booking not ready for advance payment", "error");
+    setAlert("Booking not found or advance payment not completed", "error");
     header("Location: " . BASE_URL . "customer/my_bookings.php");
     exit();
 }
 
 // Calculate payment amounts
 $booking_price = $booking['total_price'];
-$advance_amount = round($booking_price * 0.4); // 40% advance
+$advance_amount = $booking['advance_amount'];
 $remaining_amount = $booking_price - $advance_amount;
+$final_payment_percentage = round(($remaining_amount / $booking_price) * 100);
 
-// Handle payment submission
+// HANDLE FINAL PAYMENT SUBMISSION
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // Simple update without complex status changes
+        // UPDATE BOOKING: Status = completed, final payment done
         $stmt = $pdo->prepare("
             UPDATE bookings 
-            SET status = 'confirmed',
-                advance_amount = ?,
-                payment_date = NOW()
+            SET status = 'completed', 
+                final_payment_amount = ?,
+                final_payment_date = NOW(),
+                total_paid = ?
             WHERE id = ? AND customer_id = ?
         ");
-        $result = $stmt->execute([$advance_amount, $booking_id, $_SESSION['user_id']]);
+        $result = $stmt->execute([$remaining_amount, $booking_price, $booking_id, $_SESSION['user_id']]);
         
         if ($result) {
-            setAlert("✅ Advance payment of ₹" . number_format($advance_amount, 0) . " received! Wedding date locked.", "success");
+            setAlert("✅ Final payment of ₹" . number_format($remaining_amount, 0) . " received! Booking completed.", "success");
             
-            // Set donation message flag
-            $_SESSION['show_donation_message'] = true;
-            
-            // Redirect to my_bookings page (user can choose to view invoice or dashboard)
-            header("Location: " . BASE_URL . "customer/my_bookings.php");
+            // Redirect to final invoice
+            header("Location: " . BASE_URL . "invoice.php?id=" . $booking_id . "&type=final");
             exit();
         } else {
-            setAlert("Payment failed. Please try again.", "error");
+            setAlert("Payment update failed. Please try again.", "error");
         }
         
     } catch (PDOException $e) {
-        error_log("Payment error: " . $e->getMessage());
+        error_log("Final payment error: " . $e->getMessage());
         setAlert("Payment failed. Database error: " . $e->getMessage(), "error");
     }
 }
@@ -80,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pay Advance | Samaaroh</title>
+    <title>Final Payment | Samaaroh</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>body{font-family:'Inter',sans-serif}</style>
 </head>
@@ -88,17 +83,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 md:p-8">
         <div class="text-center mb-6">
             <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span class="text-3xl">💰</span>
+                <span class="text-3xl">🎉</span>
             </div>
-            <h1 class="text-2xl font-bold text-stone-800">Advance Payment</h1>
-            <p class="text-stone-600">Secure your wedding date with advance payment</p>
+            <h1 class="text-2xl font-bold text-stone-800">Complete Payment</h1>
+            <p class="text-stone-600">Pay remaining amount to complete booking</p>
         </div>
         
         <?php displayAlert(); ?>
         
         <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6 rounded-r-lg">
             <p class="text-sm text-green-800 font-medium">
-                ✅ <strong>WEDDING DATE LOCKED:</strong> Your advance payment will secure your date with the provider.
+                ✅ <strong>WEDDING DATE LOCKED:</strong> Your advance payment has secured your date. Complete the final payment to finish booking.
             </p>
         </div>
         
@@ -106,10 +101,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="flex justify-between">
                 <span class="text-stone-600">Service</span>
                 <span class="font-medium"><?= htmlspecialchars($booking['service_title']) ?></span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-stone-600">Provider</span>
-                <span class="font-medium"><?= htmlspecialchars($booking['provider_name']) ?></span>
             </div>
             <div class="flex justify-between">
                 <span class="text-stone-600">Wedding Date</span>
@@ -122,12 +113,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span>₹<?= number_format($booking_price, 0) ?></span>
                 </div>
                 <div class="flex justify-between text-sm text-green-600 mb-2">
-                    <span>Advance Payment (40%):</span>
+                    <span>Advance Paid (30%):</span>
                     <span>-₹<?= number_format($advance_amount, 0) ?></span>
                 </div>
                 <div class="flex justify-between pt-3 border-t border-stone-200">
-                    <span class="font-bold text-stone-800">Advance Amount</span>
-                    <span class="font-bold text-rose-600 text-xl">₹<?= number_format($advance_amount, 0) ?></span>
+                    <span class="font-bold text-stone-800">Final Payment (<?= $final_payment_percentage ?>%)</span>
+                    <span class="font-bold text-rose-600 text-xl">₹<?= number_format($remaining_amount, 0) ?></span>
                 </div>
             </div>
         </div>
@@ -137,16 +128,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="space-y-2 text-sm text-blue-700">
                 <div class="flex items-start">
                     <span class="mr-2">•</span>
-                    <span><strong>UPI:</strong> samaaroh@pay</span>
+                    <span><strong>UPI:</strong> samaaroh@pay (Scan QR below)</span>
                 </div>
                 <div class="flex items-start">
                     <span class="mr-2">•</span>
-                    <span><strong>Card:</strong> Enter details below (demo)</span>
+                    <span><strong>Card:</strong> Enter details below (simulated)</span>
                 </div>
                 <div class="flex items-start">
                     <span class="mr-2">•</span>
-                    <span><strong>Net Banking:</strong> Available options (demo)</span>
+                    <span><strong>Net Banking:</strong> Select bank (simulated)</span>
                 </div>
+            </div>
+            
+            <div class="mt-4 bg-white border-2 border-dashed border-blue-300 rounded-lg h-32 flex items-center justify-center text-blue-400">
+                [ QR CODE PLACEHOLDER - FOR DEMO ONLY ]
             </div>
         </div>
         
@@ -164,19 +159,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label class="block text-sm font-medium text-stone-700 mb-1">Transaction ID (Demo)</label>
                 <input type="text" name="txn_id" required placeholder="TXN123456" 
                        class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500">
-                <p class="text-xs text-stone-400 mt-1">Enter any demo ID for testing</p>
+                <p class="text-xs text-stone-400 mt-1">Enter any demo ID for presentation</p>
             </div>
             
             <div class="flex items-start">
                 <input type="checkbox" id="agree" required class="mt-1 h-4 w-4 text-rose-600">
                 <label for="agree" class="ml-2 text-sm text-stone-700">
-                    I confirm this advance payment to secure my wedding date.
+                    I confirm this final payment completes my wedding booking. All services are now fully paid.
                 </label>
             </div>
             
             <button type="submit" 
-                    class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-4 rounded-xl text-lg transition">
-                Pay ₹<?= number_format($advance_amount, 0) ?> Advance
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-lg transition">
+                Pay ₹<?= number_format($remaining_amount, 0) ?> Final Amount
             </button>
             
             <a href="<?= BASE_URL ?>customer/my_bookings.php" 

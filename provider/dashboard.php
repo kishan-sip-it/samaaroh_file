@@ -1,62 +1,70 @@
 <?php
 require_once '../config/config.php';
 
-// AUTH CHECK: Must be logged in as provider
+// Auth Check
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'provider') {
-    setAlert("Please login as a service provider to access this dashboard", "error");
+    setAlert("Please login as provider to access dashboard", "error");
     header("Location: " . BASE_URL . "login.php");
     exit();
 }
 
-// FETCH PROVIDER'S SERVICES
+// Handle booking acceptance/rejection
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['booking_id']) && isset($_POST['action'])) {
+    $booking_id = intval($_POST['booking_id']);
+    $action = $_POST['action'];
+    
+    try {
+        if ($action === 'accept') {
+            // Accept booking
+            $stmt = $pdo->prepare("
+                UPDATE bookings 
+                SET status = 'confirmed'
+                WHERE id = ? AND service_id IN (SELECT id FROM services WHERE provider_id = ?)
+            ");
+            $stmt->execute([$booking_id, $_SESSION['user_id']]);
+            
+            setAlert("✅ Booking accepted! Customer will be notified to make payment.", "success");
+        } elseif ($action === 'reject') {
+            // Reject booking
+            $stmt = $pdo->prepare("
+                UPDATE bookings 
+                SET status = 'cancelled'
+                WHERE id = ? AND service_id IN (SELECT id FROM services WHERE provider_id = ?)
+            ");
+            $stmt->execute([$booking_id, $_SESSION['user_id']]);
+            
+            setAlert("Booking rejected. Customer has been notified.", "info");
+        }
+    } catch (PDOException $e) {
+        error_log("Booking action error: " . $e->getMessage());
+        setAlert("Failed to update booking. Please try again.", "error");
+    }
+    
+    header("Location: " . BASE_URL . "provider/dashboard.php");
+    exit();
+}
+
+// Fetch provider's services
 $stmt = $pdo->prepare("
     SELECT * FROM services 
     WHERE provider_id = ? 
-    ORDER BY created_at DESC
+    ORDER BY id DESC
 ");
 $stmt->execute([$_SESSION['user_id']]);
 $services = $stmt->fetchAll();
 
-// FETCH PENDING BOOKINGS (12-hour window)
+// Fetch booking requests for provider's services
 $stmt = $pdo->prepare("
-    SELECT b.*, s.title as service_title, s.price, u.name as customer_name, u.phone 
-    FROM bookings b
-    JOIN services s ON b.service_id = s.id
-    JOIN users u ON b.customer_id = u.id
-    WHERE s.provider_id = ? AND b.status = 'pending'
-    ORDER BY b.booking_date DESC
-");
-$stmt->execute([$_SESSION['user_id']]);
-$pending_bookings = $stmt->fetchAll();
-
-// FETCH ALL BOOKINGS (for history)
-$stmt = $pdo->prepare("
-    SELECT b.*, s.title as service_title, s.price, u.name as customer_name 
+    SELECT b.*, s.title as service_title, s.category, u.name as customer_name, 
+           u.email as customer_email, u.phone as customer_phone
     FROM bookings b
     JOIN services s ON b.service_id = s.id
     JOIN users u ON b.customer_id = u.id
     WHERE s.provider_id = ?
-    ORDER BY b.booking_date DESC
-    LIMIT 10
+    ORDER BY b.id DESC
 ");
 $stmt->execute([$_SESSION['user_id']]);
-$all_bookings = $stmt->fetchAll();
-
-// Calculate confirmed bookings count (PHP 7.0+ compatible)
-$confirmed_count = 0;
-foreach ($all_bookings as $booking) {
-    if ($booking['status'] === 'confirmed') {
-        $confirmed_count++;
-    }
-}
-
-// Calculate total earnings (PHP 7.0+ compatible)
-$total_earnings = 0;
-foreach ($all_bookings as $booking) {
-    if ($booking['status'] === 'confirmed') {
-        $total_earnings += $booking['total_price'];
-    }
-}
+$bookings = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -69,367 +77,428 @@ foreach ($all_bookings as $booking) {
     <style>
         body { font-family: 'Inter', sans-serif; }
         .heading { font-family: 'Playfair Display', serif; }
-        .service-card { transition: transform 0.3s, box-shadow 0.3s; }
-        .service-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
-        .booking-card { border-left: 4px solid #ef4444; }
-        .booking-card.confirmed { border-left-color: #10b981; }
-        .booking-card.completed { border-left-color: #8b5cf6; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        .urgent { animation: pulse 2s infinite; background-color: #fef2f2; }
+        html { scroll-behavior: smooth; }
     </style>
-    <style>
-/* Minimal fallback styles for offline demo */
-body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-.btn { background: #e53e3e; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; display: inline-block; }
-.card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.alert { padding: 12px; border-radius: 4px; margin: 15px 0; }
-.alert-error { background: #fee; border-left: 4px solid #c53030; color: #c53030; }
-.alert-success { background: #efe; border-left: 4px solid #38a169; color: #38a169; }
-</style>
 </head>
 <body class="bg-stone-50 min-h-screen">
 
-    <?php include '../includes/navbar.php'; ?>
+<?php include '../includes/navbar.php'; ?>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <?php displayAlert(); ?>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <?php displayAlert(); ?>
 
-        <!-- Header -->
-        <div class="text-center mb-12">
-            <h1 class="heading text-3xl md:text-4xl font-bold text-stone-800">Provider Dashboard</h1>
-            <p class="text-stone-500 mt-2 max-w-2xl mx-auto">
-                Manage your services and booking requests from Nadiad families
-            </p>
-        </div>
+    <!-- Welcome Section -->
+    <div class="mb-8">
+        <h1 class="heading text-3xl font-bold text-stone-800">
+            Welcome back, <?= htmlspecialchars($_SESSION['name']) ?>! 🎪
+        </h1>
+        <p class="text-stone-600 mt-2">
+            Manage your wedding services and respond to booking requests from customers in Nadiad.
+        </p>
+    </div>
 
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-            <div class="bg-white rounded-2xl border border-stone-200 p-6 text-center">
-                <div class="text-3xl font-bold text-rose-600 mb-2"><?= count($services) ?></div>
-                <div class="text-stone-500 text-sm">Active Services</div>
-            </div>
-            <div class="bg-white rounded-2xl border border-stone-200 p-6 text-center">
-                <div class="text-3xl font-bold text-amber-600 mb-2"><?= count($pending_bookings) ?></div>
-                <div class="text-stone-500 text-sm">Pending Requests</div>
-                <div class="text-xs text-amber-500 mt-1">(12h window)</div>
-            </div>
-            <div class="bg-white rounded-2xl border border-stone-200 p-6 text-center">
-                <div class="text-3xl font-bold text-green-600 mb-2"><?= $confirmed_count ?></div>
-                <div class="text-stone-500 text-sm">Confirmed Bookings</div>
-            </div>
-            <div class="bg-white rounded-2xl border border-stone-200 p-6 text-center">
-                <div class="text-3xl font-bold text-stone-800 mb-2">
-                    ₹<?= number_format($total_earnings, 0) ?>
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl border border-stone-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-rose-600 text-xl">📋</span>
                 </div>
-                <div class="text-stone-500 text-sm">Total Earnings</div>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800"><?= count($services) ?></p>
+                    <p class="text-stone-600 text-sm">Your Services</p>
+                </div>
             </div>
         </div>
-
-        <!-- Pending Bookings Section -->
-        <section class="mb-16">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-stone-800">Pending Requests <span class="text-amber-600">(Respond within 12 hours)</span></h2>
-                <a href="#all-bookings" class="text-rose-600 text-sm font-medium hover:underline hidden md:block">View All Bookings →</a>
-            </div>
-            
-            <?php if (empty($pending_bookings)): ?>
-                <div class="bg-white rounded-2xl border border-stone-200 p-8 text-center">
-                    <div class="text-stone-300 text-5xl mb-4">📭</div>
-                    <p class="text-stone-500">No pending booking requests</p>
-                    <p class="text-stone-400 text-sm mt-2">You'll receive notifications when customers book your services</p>
+        
+        <div class="bg-white rounded-xl border border-stone-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-amber-600 text-xl">⏰</span>
                 </div>
-            <?php else: ?>
-                <div class="space-y-4">
-                    <?php foreach ($pending_bookings as $booking): 
-                        // Calculate time remaining (12 hours from booking)
-                        $booking_time = strtotime($booking['booking_date']);
-                        $current_time = time();
-                        $expiry_time = $booking_time + 43200; // 43200 seconds = 12 hours
-                        
-                        // Ensure we don't show negative time or more than 12 hours
-                        if ($current_time < $booking_time) {
-                            // If booking time is in future, treat it as just made
-                            $time_diff = 43200;
-                        } elseif ($current_time > $expiry_time) {
-                            // Already expired
-                            $time_diff = 0;
-                        } else {
-                            // Normal case: time remaining
-                            $time_diff = $expiry_time - $current_time;
-                        }
-                        
-                        $hours = floor($time_diff / 3600);
-                        $minutes = floor(($time_diff % 3600) / 60);
-                        $is_urgent = $time_diff < 7200 && $time_diff > 0; // Less than 2 hours
-                    ?>
-                        <div class="booking-card bg-white rounded-2xl border border-stone-200 p-6 <?= $is_urgent ? 'urgent' : '' ?>">
-                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                <div class="flex-1">
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
-                                            PENDING
-                                        </span>
-                                        <?php if ($is_urgent): ?>
-                                            <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-medium flex items-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                                </svg>
-                                                URGENT
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <h3 class="font-bold text-lg text-stone-800"><?= htmlspecialchars($booking['service_title']) ?></h3>
-                                    <p class="text-stone-500 mt-1">
-                                        <span class="font-medium"><?= htmlspecialchars($booking['customer_name']) ?></span> • 
-                                        <span><?= htmlspecialchars($booking['phone'] ?? 'N/A') ?></span>
-                                    </p>
-                                    <div class="mt-3 flex items-center text-sm text-stone-600">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                        Wedding Date: <span class="font-medium ml-1"><?= date('M d, Y', strtotime($booking['event_date'])) ?></span>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800">
+                        <?= count(array_filter($bookings, function($b) { return $b['status'] === 'pending'; })) ?>
+                    </p>
+                    <p class="text-stone-600 text-sm">Pending Requests</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-stone-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-green-600 text-xl">✅</span>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800">
+                        <?= count(array_filter($bookings, function($b) { return $b['status'] === 'confirmed'; })) ?>
+                    </p>
+                    <p class="text-stone-600 text-sm">Confirmed</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-stone-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-blue-600 text-xl">💰</span>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800">
+                        ₹<?= number_format(array_sum(array_column($bookings, 'total_price')), 0) ?>
+                    </p>
+                    <p class="text-stone-600 text-sm">Total Revenue</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Requests -->
+    <div class="mb-8">
+        <h2 class="heading text-2xl font-bold text-stone-800 mb-6">Booking Requests</h2>
+        
+        <?php if (empty($bookings)): ?>
+            <div class="bg-white rounded-xl border border-stone-200 p-8 text-center">
+                <div class="text-6xl mb-4">📝</div>
+                <h3 class="font-bold text-xl text-stone-800 mb-2">No booking requests yet</h3>
+                <p class="text-stone-600 mb-6">Customers will start booking your services soon!</p>
+            </div>
+        <?php else: ?>
+            <!-- Compact View (First 3 bookings) -->
+            <div class="space-y-6 mb-6">
+                <?php 
+                $display_bookings = array_slice($bookings, 0, 3);
+                foreach ($display_bookings as $booking): 
+                ?>
+                    <div class="bg-white rounded-xl border border-stone-200 p-6 hover:shadow-lg transition">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <!-- Booking Info -->
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <span class="text-2xl">
+                                        <?php
+                                        $icons = [
+                                            'bagiwala' => '🛺',
+                                            'party-plot' => '🎪',
+                                            'catering' => '🍲',
+                                            'photography' => '📸',
+                                            'decoration' => '🎨',
+                                            'music' => '🎵'
+                                        ];
+                                        echo $icons[$booking['category']] ?? '🎪';
+                                        ?>
+                                    </span>
+                                    <div>
+                                        <h3 class="font-bold text-lg text-stone-800"><?= htmlspecialchars($booking['service_title']) ?></h3>
+                                        <p class="text-stone-500 text-sm"><?= ucfirst($booking['category']) ?></p>
                                     </div>
                                 </div>
                                 
-                                <div class="flex flex-col items-end w-full md:w-auto">
-                                    <div class="font-bold text-rose-600 text-xl">₹<?= number_format($booking['total_price'], 0) ?></div>
-                                    <div class="text-xs text-stone-400 mt-1">
-                                        Requested: <?= date('M d, Y h:i A', strtotime($booking['booking_date'])) ?>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                    <div>
+                                        <p class="text-stone-500">Customer</p>
+                                        <p class="font-medium text-stone-900"><?= htmlspecialchars($booking['customer_name']) ?></p>
+                                        <p class="text-stone-500"><?= htmlspecialchars($booking['customer_phone']) ?></p>
                                     </div>
-                                    
-                                    <?php if ($time_diff > 0): ?>
-                                        <div class="mt-3 bg-amber-50 text-amber-800 px-3 py-1.5 rounded-lg font-medium text-sm">
-                                            <span class="font-bold"><?= $hours ?></span>h <span class="font-bold"><?= $minutes ?></span>m left
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="mt-3 bg-red-50 text-red-800 px-3 py-1.5 rounded-lg font-medium text-sm">
-                                            EXPIRED
-                                        </div>
-                                    <?php endif; ?>
-                                    
-                                    <div class="mt-4 flex gap-2 w-full md:w-auto">
-                                        <form method="POST" action="<?= BASE_URL ?>provider/update_booking.php" class="w-full md:w-auto">
+                                    <div>
+                                        <p class="text-stone-500">Event Details</p>
+                                        <p class="font-medium text-stone-900"><?= $booking['event_date'] ? date('M j, Y', strtotime($booking['event_date'])) : 'Not specified' ?></p>
+                                        <p class="text-stone-500"><?= $booking['guest_count'] ?> guests</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-stone-500">Revenue</p>
+                                        <p class="font-bold text-lg text-stone-900">₹<?= number_format($booking['total_price'], 0) ?></p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Status & Actions -->
+                            <div class="flex flex-col items-end gap-3">
+                                <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full 
+                                    <?php
+                                    switch($booking['status']) {
+                                        case 'confirmed': echo 'bg-green-100 text-green-800'; break;
+                                        case 'pending': echo 'bg-amber-100 text-amber-800'; break;
+                                        case 'cancelled': echo 'bg-red-100 text-red-800'; break;
+                                        case 'advance_paid': echo 'bg-blue-100 text-blue-800'; break;
+                                        case 'completed': echo 'bg-stone-100 text-stone-800'; break;
+                                        default: echo 'bg-stone-100 text-stone-800';
+                                    }
+                                    ?>">
+                                    <?= ucfirst(str_replace('_', ' ', $booking['status'])) ?>
+                                </span>
+                                
+                                <?php if ($booking['status'] === 'pending'): ?>
+                                    <div class="flex gap-2">
+                                        <form method="POST" class="inline">
                                             <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
                                             <input type="hidden" name="action" value="accept">
-                                            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition flex items-center justify-center gap-1">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                                </svg>
+                                            <button type="submit" 
+                                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition">
                                                 Accept
                                             </button>
                                         </form>
-                                        <form method="POST" action="<?= BASE_URL ?>provider/update_booking.php" class="w-full md:w-auto">
+                                        <form method="POST" class="inline">
                                             <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
                                             <input type="hidden" name="action" value="reject">
-                                            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition flex items-center justify-center gap-1">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
+                                            <button type="submit" 
+                                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition">
                                                 Reject
                                             </button>
                                         </form>
                                     </div>
-                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        </section>
-
-        <!-- Services Section -->
-        <section class="mb-16">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-stone-800">My Services</h2>
-                <a href="<?= BASE_URL ?>provider/add_service.php" class="bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-rose-700 transition flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add New Service
-                </a>
+                    </div>
+                <?php endforeach; ?>
             </div>
             
-            <?php if (empty($services)): ?>
-                <div class="bg-white rounded-2xl border border-stone-200 p-8 text-center">
-                    <div class="text-stone-300 text-5xl mb-4">✨</div>
-                    <p class="text-stone-500">You haven't added any services yet</p>
-                    <a href="<?= BASE_URL ?>provider/add_service.php" class="mt-4 inline-block bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-rose-700 transition">
-                        Add Your First Service
-                    </a>
+            <!-- Show All Button -->
+            <?php if (count($bookings) > 3): ?>
+                <div class="text-center">
+                    <button onclick="openBookingDrawer()" 
+                            class="bg-rose-600 hover:bg-rose-700 text-white px-6 py-3 rounded-lg font-medium transition inline-flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                        Show All (<?= count($bookings) ?> Bookings)
+                    </button>
                 </div>
-            <?php else: ?>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <?php foreach ($services as $service): ?>
-                        <div class="service-card bg-white rounded-2xl overflow-hidden border border-stone-200">
-                            <div class="h-40 bg-stone-100 relative">
-                                <?php if (!empty($service['image_path'])): ?>
-                                    <img src="<?= UPLOADS_URL ?><?= htmlspecialchars($service['image_path']) ?>"     
-                                         alt="<?= htmlspecialchars($service['title']) ?>"
-                                         class="w-full h-full object-cover">
-                                <?php else: ?>
-                                    <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-rose-50 to-amber-50">
-                                        <span class="text-5xl">
-                                            <?php 
-                                            $icons = [
-                                                'das_bagiwala' => '�',
-                                                'party_plot' => '🎪',
-                                                'catering' => '🍲',
-                                                'photography' => '📸',
-                                                'decor' => '🎨',
-                                                'entertainment' => '🎤'
-                                            ];
-                                            echo $icons[$service['category']] ?? '✨';
-                                            ?>
-                                        </span>
+            <?php endif; ?>
+        <?php endif; ?>
+    </div>
+
+    <!-- Booking Drawer -->
+    <div id="bookingDrawer" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeBookingDrawer()"></div>
+        <div class="absolute right-0 top-0 h-full w-full max-w-2xl bg-white shadow-xl transform transition-transform duration-300 translate-x-full" id="drawerContent">
+            <div class="h-full flex flex-col">
+                <!-- Drawer Header -->
+                <div class="bg-stone-800 text-white p-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="heading text-xl font-bold">All Booking Requests (<?= count($bookings) ?>)</h2>
+                        <button onclick="closeBookingDrawer()" class="text-white hover:text-stone-300 transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Drawer Content -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <div class="space-y-6">
+                        <?php foreach ($bookings as $booking): ?>
+                            <div class="bg-stone-50 rounded-xl border border-stone-200 p-6 hover:shadow-lg transition">
+                                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                    <!-- Booking Info -->
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <span class="text-2xl">
+                                                <?php
+                                                $icons = [
+                                                    'bagiwala' => '🛺',
+                                                    'party-plot' => '🎪',
+                                                    'catering' => '🍲',
+                                                    'photography' => '📸',
+                                                    'decoration' => '🎨',
+                                                    'music' => '🎵'
+                                                ];
+                                                echo $icons[$booking['category']] ?? '🎪';
+                                                ?>
+                                            </span>
+                                            <div>
+                                                <h3 class="font-bold text-lg text-stone-800"><?= htmlspecialchars($booking['service_title']) ?></h3>
+                                                <p class="text-stone-500 text-sm"><?= ucfirst($booking['category']) ?></p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                            <div>
+                                                <p class="text-stone-500">Customer</p>
+                                                <p class="font-medium text-stone-900"><?= htmlspecialchars($booking['customer_name']) ?></p>
+                                                <p class="text-stone-500"><?= htmlspecialchars($booking['customer_phone']) ?></p>
+                                            </div>
+                                            <div>
+                                                <p class="text-stone-500">Event Details</p>
+                                                <p class="font-medium text-stone-900"><?= $booking['event_date'] ? date('M j, Y', strtotime($booking['event_date'])) : 'Not specified' ?></p>
+                                                <p class="text-stone-500"><?= $booking['guest_count'] ?> guests</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-stone-500">Revenue</p>
+                                                <p class="font-bold text-lg text-stone-900">₹<?= number_format($booking['total_price'], 0) ?></p>
+                                            </div>
+                                        </div>
                                     </div>
-                                <?php endif; ?>
-                                <div class="absolute top-3 left-3">
-                                    <span class="px-2 py-1 bg-<?= $service['tier'] === 'standard' ? 'blue' : ($service['tier'] === 'premium' ? 'amber' : 'rose') ?>-100 text-<?= $service['tier'] === 'standard' ? 'blue' : ($service['tier'] === 'premium' ? 'amber' : 'rose') ?>-800 text-xs font-medium rounded-full">
-                                        <?= ucfirst($service['tier']) ?>
+                                    
+                                    <!-- Status & Actions -->
+                                    <div class="flex flex-col items-end gap-3">
+                                        <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full 
+                                            <?php
+                                            switch($booking['status']) {
+                                                case 'confirmed': echo 'bg-green-100 text-green-800'; break;
+                                                case 'pending': echo 'bg-amber-100 text-amber-800'; break;
+                                                case 'cancelled': echo 'bg-red-100 text-red-800'; break;
+                                                case 'advance_paid': echo 'bg-blue-100 text-blue-800'; break;
+                                                case 'completed': echo 'bg-stone-100 text-stone-800'; break;
+                                                default: echo 'bg-stone-100 text-stone-800';
+                                            }
+                                            ?>">
+                                            <?= ucfirst(str_replace('_', ' ', $booking['status'])) ?>
+                                        </span>
+                                        
+                                        <?php if ($booking['status'] === 'pending'): ?>
+                                            <div class="flex gap-2">
+                                                <form method="POST" class="inline">
+                                                    <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
+                                                    <input type="hidden" name="action" value="accept">
+                                                    <button type="submit" 
+                                                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition">
+                                                        Accept
+                                                    </button>
+                                                </form>
+                                                <form method="POST" class="inline">
+                                                    <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
+                                                    <input type="hidden" name="action" value="reject">
+                                                    <button type="submit" 
+                                                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition">
+                                                        Reject
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openBookingDrawer() {
+            const drawer = document.getElementById('bookingDrawer');
+            const drawerContent = document.getElementById('drawerContent');
+            drawer.classList.remove('hidden');
+            setTimeout(() => {
+                drawerContent.classList.remove('translate-x-full');
+            }, 10);
+        }
+        
+        function closeBookingDrawer() {
+            const drawer = document.getElementById('bookingDrawer');
+            const drawerContent = document.getElementById('drawerContent');
+            drawerContent.classList.add('translate-x-full');
+            setTimeout(() => {
+                drawer.classList.add('hidden');
+            }, 300);
+        }
+    </script>
+
+    <!-- Your Services -->
+    <div>
+        <h2 class="heading text-2xl font-bold text-stone-800 mb-6">Your Services</h2>
+        
+        <?php if (empty($services)): ?>
+            <div class="bg-white rounded-xl border border-stone-200 p-8 text-center">
+                <div class="text-6xl mb-4">🎪</div>
+                <h3 class="font-bold text-xl text-stone-800 mb-2">No services listed yet</h3>
+                <p class="text-stone-600 mb-6">Add your wedding services to start receiving bookings!</p>
+                <a href="<?= BASE_URL ?>provider/add_service.php" class="inline-block bg-rose-600 hover:bg-rose-700 text-white px-6 py-3 rounded-xl font-semibold transition">
+                    Add Service
+                </a>
+            </div>
+        <?php else: ?>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <?php foreach ($services as $service): ?>
+                    <div class="bg-white rounded-xl border border-stone-200 overflow-hidden hover:shadow-lg transition">
+                        <!-- Service Image -->
+                        <div class="h-48 bg-stone-100 relative">
+                            <?php if (!empty($service['image_path'])): ?>
+                                <img src="<?= UPLOADS_URL . htmlspecialchars($service['image_path']) ?>" 
+                                     alt="<?= htmlspecialchars($service['title']) ?>"
+                                     class="w-full h-full object-cover">
+                            <?php else: ?>
+                                <div class="w-full h-full flex items-center justify-center">
+                                    <span class="text-4xl">
+                                        <?php
+                                        $icons = [
+                                            'bagiwala' => ' ',
+                                            'party-plot' => ' ',
+                                            'catering' => ' ',
+                                            'photography' => ' ',
+                                            'decoration' => ' ',
+                                            'music' => ' '
+                                        ];
+                                        echo $icons[$service['category']] ?? ' ';
+                                        ?>
                                     </span>
+                                </div>
+                            <?php endif; ?>
+                            <!-- Status Badge -->
+                            <div class="absolute top-2 right-2">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                    <?= $service['is_available'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' ?>">
+                                    <?= $service['is_available'] ? 'Available' : 'Unavailable' ?>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Service Info -->
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 class="font-bold text-lg text-stone-800"><?= htmlspecialchars($service['title']) ?></h3>
+                                    <p class="text-stone-500 text-sm"><?= ucfirst($service['category']) ?></p>
                                 </div>
                             </div>
                             
-                            <div class="p-5">
-                                <div class="flex justify-between items-start mb-3">
-                                    <h3 class="font-bold text-lg text-stone-800"><?= htmlspecialchars($service['title']) ?></h3>
-                                    <span class="font-bold text-rose-600">₹<?= number_format($service['price'], 0) ?></span>
-                                </div>
-                                
-                                <p class="text-stone-500 text-sm mb-4 line-clamp-2">
-                                    <?= htmlspecialchars(substr($service['description'], 0, 80)) ?>...
-                                </p>
-                                
-                                <div class="flex items-center justify-between mb-4">
-                                    <span class="text-xs bg-stone-100 text-stone-700 px-2 py-1 rounded-full">
-                                        <?= ucfirst($service['category']) ?>
-                                    </span>
-                                    <span class="text-xs <?= $service['is_available'] ? 'text-green-600' : 'text-red-600' ?> font-medium">
-                                        <?= $service['is_available'] ? 'Available' : 'Unavailable' ?>
-                                    </span>
-                                </div>
-                                
-                                <div class="flex gap-2">
-                                    <a href="<?= BASE_URL ?>provider/edit_service.php?id=<?= $service['id'] ?>" 
-                                       class="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium py-2 rounded-lg text-center text-sm transition">
-                                        Edit
-                                    </a>
-                                    <form method="POST" action="<?= BASE_URL ?>provider/delete_service.php" class="flex-1">
-                                        <input type="hidden" name="service_id" value="<?= $service['id'] ?>">
-                                        <button type="submit" 
-                                                class="w-full bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 rounded-lg text-center text-sm transition"
-                                                onclick="return confirm('Are you sure you want to delete this service?')">
-                                            Delete
-                                        </button>
-                                    </form>
+                            <p class="text-stone-600 text-sm mb-4">
+                                <?= htmlspecialchars(substr($service['description'], 0, 100)) ?>...
+                            </p>
+                            
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <p class="text-xl font-bold text-stone-900">Rs.<?= number_format($service['price'], 0) ?></p>
+                                    <p class="text-stone-500 text-xs">per service</p>
                                 </div>
                             </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="flex gap-2">
+                                <form method="GET" action="<?= BASE_URL ?>provider/edit_service.php" class="flex-1">
+                                    <input type="hidden" name="service_id" value="<?= $service['id'] ?>">
+                                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        Edit
+                                    </button>
+                                </form>
+                                
+                                <form method="POST" class="flex-1" onsubmit="return confirm('Are you sure you want to delete this service?')">
+                                    <input type="hidden" name="service_id" value="<?= $service['id'] ?>">
+                                    <button type="submit" name="delete_service" class="w-full bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
                         </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        </section>
-
-        <!-- All Bookings Section -->
-        <section id="all-bookings">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-stone-800">Booking History</h2>
-            </div>
-            
-            <?php if (empty($all_bookings)): ?>
-                <div class="bg-white rounded-2xl border border-stone-200 p-8 text-center">
-                    <p class="text-stone-500">No bookings yet</p>
-                </div>
-            <?php else: ?>
-                <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-stone-200">
-                            <thead class="bg-stone-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Service</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Customer</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Amount</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-stone-200">
-                                <?php foreach ($all_bookings as $booking): ?>
-                                    <tr class="<?= $booking['status'] === 'confirmed' ? 'bg-green-50' : ($booking['status'] === 'completed' ? 'bg-purple-50' : '') ?>">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-stone-900"><?= htmlspecialchars($booking['service_title']) ?></div>
-                                            <div class="text-xs text-stone-500"><?= ucfirst($booking['category'] ?? 'N/A') ?></div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-stone-900"><?= htmlspecialchars($booking['customer_name']) ?></div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">
-                                            <?= date('M d, Y', strtotime($booking['event_date'])) ?>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-rose-600">
-                                            ₹<?= number_format($booking['total_price'], 0) ?>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full
-                                                <?= $booking['status'] === 'pending' ? 'bg-amber-100 text-amber-800' : 
-                                                   ($booking['status'] === 'confirmed' ? 'bg-green-100 text-green-800' : 
-                                                   ($booking['status'] === 'completed' ? 'bg-purple-100 text-purple-800' : 'bg-red-100 text-red-800')) ?>">
-                                                <?= ucfirst($booking['status']) ?>
-                                            </span>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
                     </div>
-                </div>
-            <?php endif; ?>
-        </section>
-    </main>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</main>
 
-    <?php include '../includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>
 
-    <!-- Real-time Timer Script -->
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Update timers every minute
-        setInterval(() => {
-            document.querySelectorAll('.urgent').forEach(card => {
-                const timeLeftEl = card.querySelector('.bg-amber-50');
-                if (timeLeftEl) {
-                    const text = timeLeftEl.textContent.trim();
-                    if (text === 'EXPIRED') return;
-                    
-                    const [hours, minutes] = text.split('h');
-                    let h = parseInt(hours);
-                    let m = parseInt(minutes);
-                    
-                    if (m > 0) {
-                        m--;
-                    } else if (h > 0) {
-                        h--;
-                        m = 59;
-                    } else {
-                        // Time expired - update to EXPIRED state
-                        timeLeftEl.className = 'mt-3 bg-red-50 text-red-800 px-3 py-1.5 rounded-lg font-medium text-sm';
-                        timeLeftEl.textContent = 'EXPIRED';
-                        return;
-                    }
-                    
-                    // Ensure we don't show more than 12 hours
-                    if (h >= 12) {
-                        h = 11;
-                        m = 59;
-                    }
-                    
-                    timeLeftEl.innerHTML = `<span class="font-bold">${h}</span>h <span class="font-bold">${m}</span>m left`;
-                }
-            });
-        }, 60000);
-    });
-    </script>
 </body>
 </html>

@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'provider') {
 }
 
 // GET SERVICE ID FROM URL
-$service_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$service_id = isset($_GET['service_id']) ? intval($_GET['service_id']) : 0;
 if ($service_id <= 0) {
     setAlert("Invalid service ID", "error");
     header("Location: " . BASE_URL . "provider/dashboard.php");
@@ -278,6 +278,10 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                             class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl text-lg transition flex items-center justify-center gap-2">
                         <span>✓ Save Changes</span>
                     </button>
+                    <a href="<?= BASE_URL ?>provider/manage_gallery.php?service_id=<?= $service['id'] ?>" 
+                       class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-xl text-center transition">
+                        📷 Gallery
+                    </a>
                     <a href="<?= BASE_URL ?>provider/dashboard.php" 
                        class="flex-1 bg-stone-200 hover:bg-stone-300 text-stone-800 font-medium py-3 rounded-xl text-center transition">
                         Cancel

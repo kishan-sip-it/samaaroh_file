@@ -1,351 +1,318 @@
 <?php
 require_once '../config/config.php';
 
-// AUTH CHECK: Must be logged in as customer
+// Auth Check
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'customer') {
     setAlert("Please login to access your dashboard", "error");
     header("Location: " . BASE_URL . "login.php");
     exit();
 }
 
-// FETCH SERVICES (grouped by tier)
-$stmt = $pdo->prepare("
-    SELECT s.*, u.name as provider_name 
-    FROM services s 
-    JOIN users u ON s.provider_id = u.id 
-    WHERE s.is_available = 1 
-    ORDER BY 
-        CASE s.tier 
-            WHEN 'standard' THEN 1 
-            WHEN 'premium' THEN 2 
-            WHEN 'luxury' THEN 3 
-        END,
-        s.category,
-        s.price ASC
+// Fetch user bookings
+$bookings = $pdo->prepare("
+    SELECT b.*, s.title as service_title, s.category, u.name as provider_name,
+           s.price as service_price, b.status as booking_status
+    FROM bookings b
+    LEFT JOIN services s ON b.service_id = s.id
+    LEFT JOIN users u ON s.provider_id = u.id
+    WHERE b.customer_id = ?
+    ORDER BY b.id DESC
 ");
-$stmt->execute();
-$services = $stmt->fetchAll();
+$bookings->execute([$_SESSION['user_id']]);
+$bookings_list = $bookings->fetchAll();
 
-// FETCH USER'S BOOKINGS
-$bookings_stmt = $pdo->prepare("
-    SELECT b.*, s.title as service_title, s.category, s.price as service_price 
-    FROM bookings b 
-    LEFT JOIN services s ON b.service_id = s.id 
-    WHERE b.customer_id = ? 
-    ORDER BY b.booking_date DESC
-");
-$bookings_stmt->execute([$_SESSION['user_id']]);
-$bookings = $bookings_stmt->fetchAll();
+// Fetch available services
+$services = $pdo->query("
+    SELECT s.*, u.name as provider_name, u.phone as provider_phone
+    FROM services s
+    JOIN users u ON s.provider_id = u.id
+    WHERE s.is_available = 1 AND u.is_verified = 1
+    ORDER BY s.id DESC
+")->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Dashboard | Samaaroh</title>
+    <title>Dashboard | Samaaroh</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .heading { font-family: 'Playfair Display', serif; }
-        .service-card { transition: transform 0.3s, box-shadow 0.3s; }
-        .service-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
-        .tier-badge { font-size: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 9999px; font-weight: 600; }
-        .tier-standard { background-color: #dbeafe; color: #1e40af; }
-        .tier-premium { background-color: #fef3c7; color: #92400e; }
-        .tier-luxury { background-color: #fbcfe8; color: #9d174d; }
+        html { scroll-behavior: smooth; }
     </style>
-    <style>
-/* Minimal fallback styles for offline demo */
-body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-.btn { background: #e53e3e; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; display: inline-block; }
-.card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.alert { padding: 12px; border-radius: 4px; margin: 15px 0; }
-.alert-error { background: #fee; border-left: 4px solid #c53030; color: #c53030; }
-.alert-success { background: #efe; border-left: 4px solid #38a169; color: #38a169; }
-</style>
 </head>
 <body class="bg-stone-50 min-h-screen">
 
-    <?php include '../includes/navbar.php'; ?>
+<?php include '../includes/navbar.php'; ?>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <?php displayAlert(); ?>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <?php displayAlert(); ?>
 
-        <?php if (isset($_SESSION['show_donation_message']) && $_SESSION['show_donation_message'] === true): ?>
-            <div id="donationFlash" class="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 p-4 rounded-lg shadow-lg transform transition-all duration-500">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <span class="text-3xl">🙏</span>
-                    </div>
-                    <div class="ml-3">
-                        <h3 class="text-green-800 font-bold text-lg">Thank You for Your Payment!</h3>
-                        <p class="text-green-700 text-sm mt-1">
-                            <strong>Donating 1% for a Healthy Nation</strong> - Your contribution supports healthcare initiatives across India. Together we're making a difference! 🇮🇳
-                        </p>
-                    </div>
-                    <button onclick="closeDonationMessage()" class="ml-auto text-green-500 hover:text-green-700 transition-colors">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                        </svg>
-                    </button>
+    <!-- Welcome Section -->
+    <div class="mb-8">
+        <h1 class="heading text-3xl font-bold text-stone-800">
+            Welcome back, <?= htmlspecialchars($_SESSION['name']) ?>! 👰
+        </h1>
+        <p class="text-stone-600 mt-2">
+            Manage your wedding bookings and discover new services for your special day.
+        </p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl border border-stone-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-rose-600 text-xl">📋</span>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800"><?= count($bookings_list) ?></p>
+                    <p class="text-stone-600 text-sm">Total Bookings</p>
                 </div>
             </div>
-            
-            <script>
-                // Auto-fade after 8 seconds
-                setTimeout(() => {
-                    const flashEl = document.getElementById('donationFlash');
-                    if (flashEl) {
-                        flashEl.style.opacity = '0';
-                        flashEl.style.transform = 'translateY(-20px)';
-                        setTimeout(() => {
-                            flashEl.remove();
-                        }, 500);
-                    }
-                }, 8000);
-                
-                // Manual close function
-                function closeDonationMessage() {
-                    const flashEl = document.getElementById('donationFlash');
-                    if (flashEl) {
-                        flashEl.style.opacity = '0';
-                        flashEl.style.transform = 'translateY(-20px)';
-                        setTimeout(() => {
-                            flashEl.remove();
-                        }, 500);
-                    }
-                }
-            </script>
-            
-            <?php 
-            // Clear the session flag after displaying
-            unset($_SESSION['show_donation_message']);
-            endif; ?>
-
-        <!-- Header -->
-        <div class="text-center mb-12">
-            <h1 class="heading text-3xl md:text-4xl font-bold text-stone-800">Plan Your Perfect Wedding</h1>
-            <p class="text-stone-500 mt-2 max-w-2xl mx-auto">
-                Browse verified vendors from Nadiad —  Bagiwalas, party plots, caterers & more
-            </p>
         </div>
-
-        <!-- Bookings Summary -->
-        <div class="mb-12">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-stone-800">My Bookings</h2>
-                <a href="#services" class="text-rose-600 font-medium text-sm hover:underline">Browse Services →</a>
-            </div>
-            
-            <?php if (empty($bookings)): ?>
-                <div class="bg-white rounded-2xl border border-stone-200 p-8 text-center">
-                    <div class="text-stone-300 text-5xl mb-4">📭</div>
-                    <p class="text-stone-500">You haven't booked any services yet</p>
-                    <a href="#services" class="mt-4 inline-block bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-rose-700 transition">
-                        Explore Services
-                    </a>
+        
+        <div class="bg-white rounded-xl border border-stone-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-green-600 text-xl">✅</span>
                 </div>
-            <?php else: ?>
-                <div class="grid md:grid-cols-2 gap-6">
-                    <?php foreach ($bookings as $booking): ?>
-                        <div class="bg-white rounded-2xl border border-stone-200 p-6">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <span class="tier-badge tier-<?= $booking['status'] === 'confirmed' ? 'premium' : 'standard' ?>">
-                                            <?= ucfirst($booking['status']) ?>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800">
+                        <?= count(array_filter($bookings_list, function($b) { return $b['booking_status'] === 'confirmed'; })) ?>
+                    </p>
+                    <p class="text-stone-600 text-sm">Confirmed</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-stone-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-amber-600 text-xl">⏰</span>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800">
+                        <?= count(array_filter($bookings_list, function($b) { return $b['booking_status'] === 'pending'; })) ?>
+                    </p>
+                    <p class="text-stone-600 text-sm">Pending</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-stone-200 p-6">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-blue-600 text-xl">💰</span>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-stone-800">
+                        ₹<?= number_format(array_sum(array_column($bookings_list, 'total_price')), 0) ?>
+                    </p>
+                    <p class="text-stone-600 text-sm">Total Spent</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Services Section -->
+    <section class="mb-12">
+    <div>
+        <h2 class="heading text-2xl font-bold text-stone-800 mb-6">Available Services</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <?php foreach (array_slice($services, 0, 6) as $service): ?>
+                <div class="bg-white rounded-xl border border-stone-200 overflow-hidden hover:shadow-lg transition">
+                    <!-- Banner Image -->
+                    <div class="relative h-48 bg-stone-100">
+                        <?php if (!empty($service['image'])): ?>
+                            <img src="<?= UPLOADS_URL . 'services/' . htmlspecialchars($service['image']) ?>" 
+                                 alt="<?= htmlspecialchars($service['title']) ?>"
+                                 class="w-full h-full object-cover">
+                        <?php else: ?>
+                            <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-rose-100 to-stone-100">
+                                <span class="text-4xl">
+                                    <?php
+                                    $icons = [
+                                        'bagiwala' => '🛺',
+                                        'party_plot' => '🎪',
+                                        'catering' => '🍲',
+                                        'photography' => '📸',
+                                        'decor' => '🎨',
+                                        'entertainment' => '🎵'
+                                    ];
+                                    echo $icons[$service['category']] ?? '🎪';
+                                    ?>
+                                </span>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <!-- Category Badge -->
+                        <div class="absolute top-3 left-3">
+                            <span class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-stone-700">
+                                <?= ucfirst(htmlspecialchars($service['category'])) ?>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-lg text-stone-800 mb-1"><?= htmlspecialchars($service['title']) ?></h3>
+                            <p class="text-stone-600 text-sm"><?= htmlspecialchars(substr($service['description'], 0, 100)) ?>...</p>
+                        </div>
+                        
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <p class="text-2xl font-bold text-stone-900">₹<?= number_format($service['price'], 0) ?></p>
+                                <p class="text-stone-500 text-xs">per service</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-medium text-stone-900"><?= htmlspecialchars($service['provider_name']) ?></p>
+                                <p class="text-stone-500 text-xs">⭐ 4.8 (23 reviews)</p>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-2 mb-4">
+                            <a href="<?= BASE_URL ?>customer/service_detail.php?id=<?= $service['id'] ?>" 
+                               class="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-700 py-2 px-3 rounded-lg text-sm font-medium transition text-center">
+                                View Gallery
+                            </a>
+                        </div>
+                    
+                    <form method="POST" action="<?= BASE_URL ?>customer/book_service.php" class="space-y-3">
+                        <input type="hidden" name="service_id" value="<?= $service['id'] ?>">
+                        <input type="hidden" name="price" value="<?= $service['price'] ?>">
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">Event Date</label>
+                            <input type="date" name="event_date" required
+                                class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm">
+                        </div>
+                        
+                        <?php if ($service['category'] === 'catering'): ?>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">Guest Count</label>
+                            <input type="number" name="guest_count" min="1" value="50" required
+                                class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm">
+                        </div>
+                        <?php else: ?>
+                        <input type="hidden" name="guest_count" value="1">
+                        <?php endif; ?>
+                        
+                        <button type="submit" class="w-full bg-rose-600 text-white py-2 rounded-lg font-semibold hover:bg-rose-700 transition">
+                            Book Now
+                        </button>
+                    </form>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        
+        <div class="text-center mt-8">
+            <a href="<?= BASE_URL ?>services.php" class="inline-block bg-stone-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-stone-800 transition">
+                View All Services
+            </a>
+        </div>
+    </div>
+    </section>
+
+    <!-- Recent Bookings Section -->
+    <section class="mb-8">
+    <div class="mb-8">
+        <h2 class="heading text-2xl font-bold text-stone-800 mb-6">Recent Bookings</h2>
+        
+        <?php if (empty($bookings_list)): ?>
+            <div class="bg-white rounded-xl border border-stone-200 p-8 text-center">
+                <div class="text-6xl mb-4">📝</div>
+                <h3 class="font-bold text-xl text-stone-800 mb-2">No bookings yet</h3>
+                <p class="text-stone-600 mb-6">Start planning your wedding by booking our amazing services!</p>
+                <a href="<?= BASE_URL ?>services.php" class="inline-block bg-rose-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-rose-700 transition">
+                    Browse Services
+                </a>
+            </div>
+        <?php else: ?>
+            <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-stone-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Service</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Provider</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-stone-200">
+                            <?php foreach (array_slice($bookings_list, 0, 5) as $booking): ?>
+                                <tr>
+                                    <td class="px-6 py-4">
+                                        <div>
+                                            <p class="font-medium text-stone-900"><?= htmlspecialchars($booking['service_title']) ?></p>
+                                            <p class="text-sm text-stone-500"><?= htmlspecialchars($booking['category']) ?></p>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="font-medium text-stone-900"><?= htmlspecialchars($booking['provider_name']) ?></p>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="text-stone-900"><?= date('M j, Y') ?></p>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="font-medium text-stone-900">₹<?= number_format($booking['total_price'], 0) ?></p>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                            <?php
+                                            switch($booking['booking_status']) {
+                                                case 'confirmed': echo 'bg-green-100 text-green-800'; break;
+                                                case 'pending': echo 'bg-amber-100 text-amber-800'; break;
+                                                case 'cancelled': echo 'bg-red-100 text-red-800'; break;
+                                                case 'paid': echo 'bg-blue-100 text-blue-800'; break;
+                                                case 'completed': echo 'bg-stone-100 text-stone-800'; break;
+                                                default: echo 'bg-stone-100 text-stone-800';
+                                            }
+                                            ?>">
+                                            <?= ucfirst(str_replace('_', ' ', $booking['booking_status'])) ?>
                                         </span>
-                                        <?php if ($booking['status'] === 'pending'): ?>
-                                            <span class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">12h window</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <?php if ($booking['booking_status'] === 'confirmed'): ?>
+                                            <a href="<?= BASE_URL ?>customer/booking_payment.php?booking_id=<?= $booking['id'] ?>" 
+                                               class="text-rose-600 hover:text-rose-900 font-medium">
+                                                Make Payment
+                                            </a>
+                                        <?php elseif ($booking['booking_status'] === 'paid'): ?>
+                                            <a href="<?= BASE_URL ?>customer/booking_payment.php?booking_id=<?= $booking['id'] ?>" 
+                                               class="text-rose-600 hover:text-rose-900 font-medium">
+                                                Final Payment
+                                            </a>
+                                        <?php else: ?>
+                                            <a href="#" class="text-rose-600 hover:text-rose-900 font-medium">View</a>
                                         <?php endif; ?>
-                                    </div>
-                                    <h3 class="font-bold text-lg"><?= htmlspecialchars($booking['service_title'] ?? 'Package Booking') ?></h3>
-                                    <p class="text-stone-500 text-sm mt-1">
-                                        <?= ucfirst($booking['category'] ?? 'N/A') ?> • 
-                                        ₹<?= number_format($booking['total_price'], 0) ?>
-                                    </p>
-                                </div>
-                                <div class="text-right">
-                                    <div class="font-bold text-rose-600">₹<?= number_format($booking['total_price'], 0) ?></div>
-                                    <div class="text-xs text-stone-400 mt-1">
-                                        Booked: <?= date('M d, Y', strtotime($booking['booking_date'])) ?>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <?php if ($booking['event_date']): ?>
-                                <div class="mt-4 pt-4 border-t border-stone-100">
-                                    <div class="flex items-center text-sm text-stone-600">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                        Wedding Date: <span class="font-medium ml-1"><?= date('M d, Y', strtotime($booking['event_date'])) ?></span>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <!-- Services by Tier -->
-        <?php 
-        $tiers = ['standard' => 'Standard Celebration', 'premium' => 'Premium Experience', 'luxury' => 'Luxury Affair'];
-        foreach ($tiers as $tier_key => $tier_name): 
-            // PHP 7.0+ COMPATIBLE FILTER (NO ARROW FUNCTIONS)
-            $tier_services = array_filter($services, function($s) use ($tier_key) {
-                return $s['tier'] === $tier_key;
-            });
-            if (empty($tier_services)) continue;
-        ?>
-            <section class="mb-16" id="<?= $tier_key ?>-services">
-                <div class="flex justify-between items-center mb-8">
-                    <h2 class="heading text-2xl font-bold text-stone-800">
-                        <?= $tier_name ?> 
-                        <span class="text-rose-600 text-lg">
-                            <?php 
-                            $price_ranges = [
-                                'standard' => '₹5-15L', 
-                                'premium' => '₹15-30L', 
-                                'luxury' => '₹30L+'
-                            ];
-                            echo $price_ranges[$tier_key];
-                            ?>
-                        </span>
-                    </h2>
-                    <a href="#how-it-works" class="text-rose-600 text-sm font-medium hover:underline hidden md:block">
-                        How booking works →
-                    </a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <?php foreach ($tier_services as $service): ?>
-                        <div class="service-card bg-white rounded-2xl overflow-hidden border border-stone-200">
-                            <div class="h-48 bg-stone-100 relative">
-                                <?php if (!empty($service['image_path'])): ?>
-                                    <img src="<?= UPLOADS_URL ?><?= htmlspecialchars($service['image_path']) ?>" 
-                                         alt="<?= htmlspecialchars($service['title']) ?>"
-                                         class="w-full h-full object-cover">
-                                <?php else: ?>
-                                    <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-rose-50 to-amber-50">
-                                        <span class="text-4xl">
-                                            <?php 
-                                            $icons = [
-                                                'bagiwala' => '🍰',
-                                                'party_plot' => '🎪',
-                                                'catering' => '🍲',
-                                                'photography' => '📸',
-                                                'decor' => '🎨',
-                                                'entertainment' => '🎤'
-                                            ];
-                                            echo $icons[$service['category']] ?? '✨';
-                                            ?>
-                                        </span>
-                                    </div>
-                                <?php endif; ?>
-                                <div class="absolute top-3 left-3">
-                                    <span class="tier-badge tier-<?= $service['tier'] ?>">
-                                        <?= ucfirst($service['tier']) ?>
-                                    </span>
-                                </div>
-                            </div>
-                            
-                            <div class="p-6">
-                                <div class="flex justify-between items-start mb-3">
-                                    <h3 class="font-bold text-lg text-stone-800"><?= htmlspecialchars($service['title']) ?></h3>
-                                    <span class="font-bold text-rose-600">₹<?= number_format($service['price'], 0) ?></span>
-                                </div>
-                                
-                                <p class="text-stone-500 text-sm mb-4 line-clamp-2">
-                                    <?= htmlspecialchars(substr($service['description'], 0, 100)) ?>...
-                                </p>
-                                
-                                <div class="flex items-center justify-between mb-5">
-                                    <div class="flex items-center">
-                                        <span class="text-amber-400">★★★★★</span>
-                                        <span class="text-stone-400 text-sm ml-1">Verified</span>
-                                    </div>
-                                    <span class="text-xs bg-stone-100 text-stone-700 px-2 py-1 rounded-full">
-                                        <?= ucfirst($service['category']) ?>
-                                    </span>
-                                </div>
-                                
-                                <form method="POST" action="<?= BASE_URL ?>customer/book_service.php" class="space-y-3">
-                                    <input type="hidden" name="service_id" value="<?= $service['id'] ?>">
-                                    <input type="hidden" name="price" value="<?= $service['price'] ?>">
-                                    
-                                    <div>
-                                        <label class="block text-sm font-medium text-stone-700 mb-1">Wedding Date</label>
-                                        <input type="date" name="event_date" required min="<?= date('Y-m-d', strtotime('+7 days')) ?>"
-                                               class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent">
-                                    </div>
-                                    
-                                    <button type="submit" 
-                                            class="w-full bg-rose-600 hover:bg-rose-700 text-white font-medium py-3 rounded-xl transition flex items-center justify-center gap-2">
-                                        <span>Book This Service</span>
-                                        <span>→</span>
-                                    </button>
-                                    
-                                    <p class="text-xs text-stone-400 text-center mt-2">
-                                        Provider has 12 hours to accept your request
-                                    </p>
-                                </form>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </section>
-        <?php endforeach; ?>
-
-        <!-- How It Works -->
-        <section id="how-it-works" class="py-16 bg-stone-50 rounded-3xl mt-12">
-            <div class="max-w-4xl mx-auto text-center px-4">
-                <h2 class="heading text-3xl font-bold text-stone-800 mb-4">How Booking Works</h2>
-                <p class="text-stone-500 mb-10 max-w-2xl mx-auto">
-                    Stress-free planning for your Gujarati wedding in Nadiad
-                </p>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div class="p-6 bg-white rounded-2xl border border-stone-200">
-                        <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-700 font-bold text-xl">1</div>
-                        <h3 class="font-bold text-lg mb-2">Select & Book</h3>
-                        <p class="text-stone-600">Choose services like Das Bagiwala or party plot. Select your wedding date and submit request.</p>
+                <?php if (count($bookings_list) > 5): ?>
+                    <div class="px-6 py-4 bg-stone-50 border-t border-stone-200">
+                        <a href="#" class="text-rose-600 hover:text-rose-900 font-medium">View all bookings →</a>
                     </div>
-                    
-                    <div class="p-6 bg-white rounded-2xl border border-stone-200">
-                        <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-700 font-bold text-xl">2</div>
-                        <h3 class="font-bold text-lg mb-2">12-Hour Window</h3>
-                        <p class="text-stone-600">Provider gets notified instantly. They have 12 hours to accept your request (like Uber for weddings).</p>
-                    </div>
-                    
-                    <div class="p-6 bg-white rounded-2xl border border-stone-200">
-                        <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-700 font-bold text-xl">3</div>
-                        <h3 class="font-bold text-lg mb-2">Pay & Celebrate</h3>
-                        <p class="text-stone-600">Pay securely after confirmation. Focus on your celebration — we handle vendor coordination.</p>
-                    </div>
-                </div>
+                <?php endif; ?>
             </div>
-        </section>
-    </main>
+        <?php endif; ?>
+    </div>
+    </section>
+</main>
 
-    <?php include '../includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>
 
-    <script>
-    // Smooth scroll for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                window.scrollTo({
-                    top: target.offsetTop - 80,
-                    behavior: 'smooth'
-                });
-            }
-        });
-    });
-    </script>
 </body>
 </html>

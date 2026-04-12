@@ -42,7 +42,7 @@ if ($booking['provider_id'] != $_SESSION['user_id']) {
 }
 
 // CHECK 12-HOUR WINDOW (CRITICAL FOR GUJARATI WEDDING WORKFLOW)
-$booking_time = strtotime($booking['booking_date']);
+$booking_time = strtotime($booking['created_at']); // Use created_at instead of booking_date
 $time_elapsed = time() - $booking_time;
 $twelve_hours = 12 * 60 * 60; // 43200 seconds
 
@@ -54,14 +54,14 @@ if ($time_elapsed > $twelve_hours) {
 
 // PROCESS ACTION (UPDATED FOR ADVANCE PAYMENT FLOW)
 try {
-    $new_status = ($action === 'accept') ? 'accepted' : 'cancelled'; // CHANGED: 'accepted' not 'confirmed'
+    $new_status = ($action === 'accept') ? 'confirmed' : 'cancelled'; // Use correct status values
     $stmt = $pdo->prepare("UPDATE bookings SET status = ? WHERE id = ?");
     $stmt->execute([$new_status, $booking_id]);
     
     if ($action === 'accept') {
-        setAlert("✅ Booking accepted! Customer must pay 30% advance to confirm date.", "success");
+        setAlert("✅ Booking accepted! Customer will be notified to make payment.", "success");
     } else {
-        setAlert("❌ Booking rejected. Customer notified.", "success");
+        setAlert("❌ Booking rejected. Customer notified.", "info");
     }
 } catch (PDOException $e) {
     error_log("Booking update error: " . $e->getMessage());

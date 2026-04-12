@@ -46,7 +46,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <style>
         body { font-family: 'Inter', sans-serif; }
         .heading { font-family: 'Playfair Display', serif; }
-        .star-rating { display: flex; gap: 0.25rem; }
+        html { scroll-behavior: smooth; }
+        .star-rating { display: flex; gap: 0.25rem; flex-direction: row-reverse; justify-content: flex-end; }
         .star-rating input[type="radio"] { display: none; }
         .star-rating label { 
             cursor: pointer; 
@@ -55,225 +56,140 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             transition: all 0.2s ease;
             padding: 0.25rem;
             border-radius: 0.25rem;
+            order: 1;
         }
-        .star-rating label:hover {
-            color: #fbbf24;
-            transform: scale(1.1);
-            background-color: #fef3c7;
-        }
-        .star-rating input[type="radio"]:checked + label {
-            color: #f59e0b;
-            background-color: #fef3c7;
-            transform: scale(1.1);
-        }
-        .star-rating input[type="radio"]:checked ~ label {
-            color: #f59e0b;
-            background-color: #fef3c7;
-            transform: scale(1.1);
-        }
+        .star-rating label:hover { color: #fbbf24; }
+        .star-rating input[type="radio"]:checked ~ label { color: #fbbf24; }
     </style>
 </head>
-<body class="bg-stone-50">
-    <?php include 'includes/navbar.php'; ?>
+<body class="bg-stone-50 min-h-screen">
 
-    <!-- Hero Section -->
-    <section class="bg-amber-50 py-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="heading text-3xl md:text-4xl font-bold text-stone-800 mb-4">Share Your Feedback</h1>
+<?php include 'includes/navbar.php'; ?>
+
+<main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <!-- Header -->
+    <div class="text-center mb-12">
+        <h1 class="heading text-4xl md:text-5xl font-bold text-stone-800">Share Your Experience</h1>
+        <p class="text-stone-500 mt-4 max-w-2xl mx-auto">
+            Your feedback helps us improve and assists other families in making informed wedding planning decisions.
+        </p>
+    </div>
+
+    <!-- Alert -->
+    <?php echo $message; ?>
+
+    <!-- Feedback Form -->
+    <div class="bg-white rounded-2xl border border-stone-200 p-8 shadow-sm">
+        <form method="POST" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-stone-700 mb-2">Your Name *</label>
+                    <input type="text" id="name" name="name" required
+                        class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition"
+                        placeholder="John Doe" value="<?= htmlspecialchars($_POST['name'] ?? '') ?>">
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-stone-700 mb-2">Email Address *</label>
+                    <input type="email" id="email" name="email" required
+                        class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition"
+                        placeholder="john@example.com" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
+                </div>
+            </div>
+            
+            <div>
+                <label for="phone" class="block text-sm font-medium text-stone-700 mb-2">Phone Number</label>
+                <input type="tel" id="phone" name="phone"
+                    class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition"
+                    placeholder="+91 98765 43210" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="service_type" class="block text-sm font-medium text-stone-700 mb-2">Service Used</label>
+                    <select id="service_type" name="service_type"
+                        class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition">
+                        <option value="">Select service</option>
+                        <option value="bagiwala" <?= ($_POST['service_type'] ?? '') === 'bagiwala' ? 'selected' : '' ?>>Bagiwala</option>
+                        <option value="party-plot" <?= ($_POST['service_type'] ?? '') === 'party-plot' ? 'selected' : '' ?>>Party Plot</option>
+                        <option value="catering" <?= ($_POST['service_type'] ?? '') === 'catering' ? 'selected' : '' ?>>Catering</option>
+                        <option value="photography" <?= ($_POST['service_type'] ?? '') === 'photography' ? 'selected' : '' ?>>Photography</option>
+                        <option value="decoration" <?= ($_POST['service_type'] ?? '') === 'decoration' ? 'selected' : '' ?>>Decoration</option>
+                        <option value="music" <?= ($_POST['service_type'] ?? '') === 'music' ? 'selected' : '' ?>>Music & DJ</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="feedback_type" class="block text-sm font-medium text-stone-700 mb-2">Feedback Type</label>
+                    <select id="feedback_type" name="feedback_type"
+                        class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition">
+                        <option value="">Select type</option>
+                        <option value="compliment" <?= ($_POST['feedback_type'] ?? '') === 'compliment' ? 'selected' : '' ?>>Compliment</option>
+                        <option value="suggestion" <?= ($_POST['feedback_type'] ?? '') === 'suggestion' ? 'selected' : '' ?>>Suggestion</option>
+                        <option value="complaint" <?= ($_POST['feedback_type'] ?? '') === 'complaint' ? 'selected' : '' ?>>Complaint</option>
+                        <option value="review" <?= ($_POST['feedback_type'] ?? '') === 'review' ? 'selected' : '' ?>>Review</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Star Rating -->
+            <div>
+                <label class="block text-sm font-medium text-stone-700 mb-2">Overall Rating *</label>
+                <div class="star-rating flex-row-reverse justify-end">
+                    <input type="radio" id="star5" name="rating" value="5" required>
+                    <label for="star5">★</label>
+                    <input type="radio" id="star4" name="rating" value="4">
+                    <label for="star4">★</label>
+                    <input type="radio" id="star3" name="rating" value="3">
+                    <label for="star3">★</label>
+                    <input type="radio" id="star2" name="rating" value="2">
+                    <label for="star2">★</label>
+                    <input type="radio" id="star1" name="rating" value="1">
+                    <label for="star1">★</label>
+                </div>
+                <p class="text-sm text-stone-500 mt-1">Click to rate your experience</p>
+            </div>
+            
+            <div>
+                <label for="comments" class="block text-sm font-medium text-stone-700 mb-2">Your Feedback *</label>
+                <textarea id="comments" name="comments" required rows="5"
+                    class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none transition"
+                    placeholder="Share your detailed experience..."><?= htmlspecialchars($_POST['comments'] ?? '') ?></textarea>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-stone-700 mb-2">Would you recommend Samaaroh?</label>
+                <div class="flex gap-4">
+                    <label class="flex items-center">
+                        <input type="radio" name="recommend" value="yes" class="mr-2">
+                        <span>Yes, definitely!</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="recommend" value="no" class="mr-2">
+                        <span>Not really</span>
+                    </label>
+                </div>
+            </div>
+            
+            <button type="submit"
+                class="w-full bg-rose-600 hover:bg-rose-700 text-white py-4 rounded-xl font-semibold text-lg transition transform hover:scale-105">
+                Submit Feedback
+            </button>
+        </form>
+    </div>
+
+    <!-- Thank You Section -->
+    <div class="mt-16 text-center">
+        <div class="bg-gradient-to-br from-rose-50 to-amber-50 rounded-2xl p-8">
+            <div class="text-6xl mb-4">🙏</div>
+            <h2 class="heading text-2xl font-bold text-stone-800 mb-4">Thank You for Your Feedback!</h2>
             <p class="text-stone-600 max-w-2xl mx-auto">
-                Your feedback helps us improve our services and make every wedding perfect
+                Your honest feedback helps us serve Nadiad families better and improve our wedding planning platform. 
+                We read every submission and use it to make meaningful improvements.
             </p>
         </div>
-    </section>
+    </div>
+</main>
 
-    <!-- Feedback Form Section -->
-    <section class="py-16">
-        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="bg-white rounded-2xl shadow-xl p-8">
-                <?php echo $message; ?>
-                
-                <h2 class="heading text-2xl font-bold text-stone-800 mb-6">We'd Love to Hear From You</h2>
-                
-                <form method="POST" class="space-y-6">
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-stone-700 mb-2">Full Name *</label>
-                            <input type="text" id="name" name="name" required
-                                   class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                                   placeholder="John Doe"
-                                   value="<?= htmlspecialchars($_POST['name'] ?? '') ?>">
-                        </div>
-                        
-                        <div>
-                            <label for="email" class="block text-sm font-medium text-stone-700 mb-2">Email Address *</label>
-                            <input type="email" id="email" name="email" required
-                                   class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                                   placeholder="john@example.com"
-                                   value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label for="phone" class="block text-sm font-medium text-stone-700 mb-2">Phone Number</label>
-                        <input type="tel" id="phone" name="phone"
-                               class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                               placeholder="+91 98765 43210"
-                               value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
-                    </div>
-                    
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="service_type" class="block text-sm font-medium text-stone-700 mb-2">Service Type</label>
-                            <select id="service_type" name="service_type"
-                                    class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent">
-                                <option value="">Select Service</option>
-                                <option value="booking" <?= ($_POST['service_type'] ?? '') === 'booking' ? 'selected' : '' ?>>Booking Experience</option>
-                                <option value="vendor" <?= ($_POST['service_type'] ?? '') === 'vendor' ? 'selected' : '' ?>>Vendor Service</option>
-                                <option value="package" <?= ($_POST['service_type'] ?? '') === 'package' ? 'selected' : '' ?>>Wedding Package</option>
-                                <option value="support" <?= ($_POST['service_type'] ?? '') === 'support' ? 'selected' : '' ?>>Customer Support</option>
-                                <option value="other" <?= ($_POST['service_type'] ?? '') === 'other' ? 'selected' : '' ?>>Other</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label for="feedback_type" class="block text-sm font-medium text-stone-700 mb-2">Feedback Type</label>
-                            <select id="feedback_type" name="feedback_type"
-                                    class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent">
-                                <option value="">Select Type</option>
-                                <option value="compliment" <?= ($_POST['feedback_type'] ?? '') === 'compliment' ? 'selected' : '' ?>>Compliment</option>
-                                <option value="suggestion" <?= ($_POST['feedback_type'] ?? '') === 'suggestion' ? 'selected' : '' ?>>Suggestion</option>
-                                <option value="complaint" <?= ($_POST['feedback_type'] ?? '') === 'complaint' ? 'selected' : '' ?>>Complaint</option>
-                                <option value="general" <?= ($_POST['feedback_type'] ?? '') === 'general' ? 'selected' : '' ?>>General Feedback</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-stone-700 mb-2">Overall Rating *</label>
-                        <div class="star-rating flex-row-reverse justify-end">
-                            <input type="radio" id="star1" name="rating" value="1" required <?= ($_POST['rating'] ?? '') === '1' ? 'checked' : '' ?>>
-                            <label for="star1">☆</label>
-                            <input type="radio" id="star2" name="rating" value="2" <?= ($_POST['rating'] ?? '') === '2' ? 'checked' : '' ?>>
-                            <label for="star2">☆</label>
-                            <input type="radio" id="star3" name="rating" value="3" <?= ($_POST['rating'] ?? '') === '3' ? 'checked' : '' ?>>
-                            <label for="star3">☆</label>
-                            <input type="radio" id="star4" name="rating" value="4" <?= ($_POST['rating'] ?? '') === '4' ? 'checked' : '' ?>>
-                            <label for="star4">☆</label>
-                            <input type="radio" id="star5" name="rating" value="5" <?= ($_POST['rating'] ?? '') === '5' ? 'checked' : '' ?>>
-                            <label for="star5">☆</label>
-                        </div>
-                        <p class="text-xs text-stone-500 mt-1">Click stars to rate (1=Poor, 5=Excellent)</p>
-                    </div>
-                    
-                    <div>
-                        <label for="comments" class="block text-sm font-medium text-stone-700 mb-2">Your Comments *</label>
-                        <textarea id="comments" name="comments" rows="6" required
-                                  class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                                  placeholder="Please share your detailed feedback..."><?= htmlspecialchars($_POST['comments'] ?? '') ?></textarea>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-stone-700 mb-2">Would you recommend Samaaroh to others?</label>
-                        <div class="flex gap-4">
-                            <label class="flex items-center">
-                                <input type="radio" name="recommend" value="yes" class="mr-2" <?= ($_POST['recommend'] ?? '') === 'yes' ? 'checked' : '' ?>>
-                                <span class="text-stone-700">Yes</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" name="recommend" value="no" class="mr-2" <?= ($_POST['recommend'] ?? '') === 'no' ? 'checked' : '' ?>>
-                                <span class="text-stone-700">No</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" name="recommend" value="maybe" class="mr-2" <?= ($_POST['recommend'] ?? '') === 'maybe' ? 'checked' : '' ?>>
-                                <span class="text-stone-700">Maybe</span>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" 
-                            class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-4 rounded-xl transition duration-200 shadow-lg hover:shadow-xl">
-                        Submit Feedback
-                    </button>
-                </form>
-                
-                <div class="mt-8 pt-6 border-t border-stone-200">
-                    <h3 class="font-semibold text-stone-800 mb-3">Why your feedback matters</h3>
-                    <ul class="space-y-2 text-sm text-stone-600">
-                        <li class="flex items-start">
-                            <span class="text-amber-500 mr-2 mt-1">•</span>
-                            <span>Helps us improve our services and vendor partnerships</span>
-                        </li>
-                        <li class="flex items-start">
-                            <span class="text-amber-500 mr-2 mt-1">•</span>
-                            <span>Allows us to address issues quickly and effectively</span>
-                        </li>
-                        <li class="flex items-start">
-                            <span class="text-amber-500 mr-2 mt-1">•</span>
-                            <span>Enables us to create better wedding experiences for others</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
+<?php include 'includes/footer.php'; ?>
 
-    <!-- Testimonials Section -->
-    <section class="py-16 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="heading text-3xl font-bold text-center text-stone-800 mb-12">What Our Customers Say</h2>
-            
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="bg-stone-50 p-6 rounded-xl">
-                    <div class="flex mb-4">
-                        <span class="text-amber-400">⭐⭐⭐⭐⭐</span>
-                    </div>
-                    <p class="text-stone-600 mb-4">"Amazing platform! Made our wedding planning so much easier. The vendors were professional and reliable."</p>
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-rose-200 rounded-full flex items-center justify-center mr-3">
-                            <span class="text-rose-600 font-semibold">RD</span>
-                        </div>
-                        <div>
-                            <p class="font-semibold text-stone-800">Rita Desai</p>
-                            <p class="text-sm text-stone-500">Nadiad</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-stone-50 p-6 rounded-xl">
-                    <div class="flex mb-4">
-                        <span class="text-amber-400">⭐⭐⭐⭐⭐</span>
-                    </div>
-                    <p class="text-stone-600 mb-4">"Excellent service! The package deals were perfect for our budget. Customer support was very helpful throughout."</p>
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-amber-200 rounded-full flex items-center justify-center mr-3">
-                            <span class="text-amber-600 font-semibold">AP</span>
-                        </div>
-                        <div>
-                            <p class="font-semibold text-stone-800">Amit Patel</p>
-                            <p class="text-sm text-stone-500">Anand</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-stone-50 p-6 rounded-xl">
-                    <div class="flex mb-4">
-                        <span class="text-amber-400">⭐⭐⭐⭐</span>
-                    </div>
-                    <p class="text-stone-600 mb-4">"Good experience overall. Would love to see more vendor options. The booking process was smooth and transparent."</p>
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-stone-200 rounded-full flex items-center justify-center mr-3">
-                            <span class="text-stone-600 font-semibold">SM</span>
-                        </div>
-                        <div>
-                            <p class="font-semibold text-stone-800">Sneha Mehta</p>
-                            <p class="text-sm text-stone-500">Nadiad</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <?php include 'includes/footer.php'; ?>
 </body>
 </html>

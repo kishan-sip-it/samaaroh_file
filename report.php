@@ -28,7 +28,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
     } else {
         $message = "<div class='bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded'>
-                      <strong>Warning!</strong> Please fill in all required fields.
+                      <strong>Error!</strong> Please fill in all required fields.
                     </div>";
     }
 }
@@ -44,124 +44,113 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <style>
         body { font-family: 'Inter', sans-serif; }
         .heading { font-family: 'Playfair Display', serif; }
+        html { scroll-behavior: smooth; }
     </style>
 </head>
-<body class="bg-stone-50">
-    <?php include 'includes/navbar.php'; ?>
+<body class="bg-stone-50 min-h-screen">
 
-    <!-- Hero Section -->
-    <section class="bg-stone-100 py-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="heading text-3xl md:text-4xl font-bold text-stone-800 mb-4">Report an Issue</h1>
-            <p class="text-stone-600 max-w-2xl mx-auto">
-                Help us improve Samaaroh by reporting any issues or concerns you encounter
-            </p>
-        </div>
-    </section>
+<?php include 'includes/navbar.php'; ?>
 
-    <!-- Report Form Section -->
-    <section class="py-16">
-        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="bg-white rounded-2xl shadow-xl p-8">
-                <?php echo $message; ?>
-                
-                <h2 class="heading text-2xl font-bold text-stone-800 mb-6">Submit Your Report</h2>
-                
-                <form method="POST" class="space-y-6">
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-stone-700 mb-2">Full Name *</label>
-                            <input type="text" id="name" name="name" required
-                                   class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                                   placeholder="John Doe"
-                                   value="<?= htmlspecialchars($_POST['name'] ?? '') ?>">
-                        </div>
-                        
-                        <div>
-                            <label for="email" class="block text-sm font-medium text-stone-700 mb-2">Email Address *</label>
-                            <input type="email" id="email" name="email" required
-                                   class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                                   placeholder="john@example.com"
-                                   value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label for="phone" class="block text-sm font-medium text-stone-700 mb-2">Phone Number</label>
-                        <input type="tel" id="phone" name="phone"
-                               class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                               placeholder="+91 98765 43210"
-                               value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
-                    </div>
-                    
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="issue_type" class="block text-sm font-medium text-stone-700 mb-2">Issue Type *</label>
-                            <select id="issue_type" name="issue_type" required
-                                    class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent">
-                                <option value="">Select Issue Type</option>
-                                <option value="booking" <?= ($_POST['issue_type'] ?? '') === 'booking' ? 'selected' : '' ?>>Booking Issue</option>
-                                <option value="payment" <?= ($_POST['issue_type'] ?? '') === 'payment' ? 'selected' : '' ?>>Payment Problem</option>
-                                <option value="vendor" <?= ($_POST['issue_type'] ?? '') === 'vendor' ? 'selected' : '' ?>>Vendor Complaint</option>
-                                <option value="service" <?= ($_POST['issue_type'] ?? '') === 'service' ? 'selected' : '' ?>>Service Quality</option>
-                                <option value="technical" <?= ($_POST['issue_type'] ?? '') === 'technical' ? 'selected' : '' ?>>Technical Issue</option>
-                                <option value="other" <?= ($_POST['issue_type'] ?? '') === 'other' ? 'selected' : '' ?>>Other</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label for="priority" class="block text-sm font-medium text-stone-700 mb-2">Priority Level</label>
-                            <select id="priority" name="priority"
-                                    class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent">
-                                <option value="low" <?= ($_POST['priority'] ?? '') === 'low' ? 'selected' : '' ?>>Low</option>
-                                <option value="medium" <?= ($_POST['priority'] ?? '') === 'medium' ? 'selected' : '' ?>>Medium</option>
-                                <option value="high" <?= ($_POST['priority'] ?? '') === 'high' ? 'selected' : '' ?>>High</option>
-                                <option value="urgent" <?= ($_POST['priority'] ?? '') === 'urgent' ? 'selected' : '' ?>>Urgent</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label for="description" class="block text-sm font-medium text-stone-700 mb-2">Description *</label>
-                        <textarea id="description" name="description" rows="6" required
-                                  class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                                  placeholder="Please describe the issue in detail..."><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
-                    </div>
-                    
-                    <div class="flex items-center">
-                        <input type="checkbox" id="terms" name="terms" required class="mr-2">
-                        <label for="terms" class="text-sm text-stone-600">
-                            I agree to the terms and conditions for submitting this report
-                        </label>
-                    </div>
-                    
-                    <button type="submit" 
-                            class="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-4 rounded-xl transition duration-200 shadow-lg hover:shadow-xl">
-                        Submit Report
-                    </button>
-                </form>
-                
-                <div class="mt-8 pt-6 border-t border-stone-200">
-                    <h3 class="font-semibold text-stone-800 mb-3">What happens next?</h3>
-                    <ul class="space-y-2 text-sm text-stone-600">
-                        <li class="flex items-start">
-                            <span class="text-rose-500 mr-2 mt-1">•</span>
-                            <span>Your report will be reviewed by our support team within 24 hours</span>
-                        </li>
-                        <li class="flex items-start">
-                            <span class="text-rose-500 mr-2 mt-1">•</span>
-                            <span>We'll contact you via email or phone for follow-up if needed</span>
-                        </li>
-                        <li class="flex items-start">
-                            <span class="text-rose-500 mr-2 mt-1">•</span>
-                            <span>Urgent issues will be prioritized and addressed immediately</span>
-                        </li>
-                    </ul>
+<main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <!-- Header -->
+    <div class="text-center mb-12">
+        <h1 class="heading text-4xl md:text-5xl font-bold text-stone-800">Report an Issue</h1>
+        <p class="text-stone-500 mt-4 max-w-2xl mx-auto">
+            Help us improve Samaaroh by reporting any issues or concerns you encounter
+        </p>
+    </div>
+
+    <!-- Alert -->
+    <?php echo $message; ?>
+
+    <!-- Report Form -->
+    <div class="bg-white rounded-2xl border border-stone-200 p-8 shadow-sm">
+        <form method="POST" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-stone-700 mb-2">Your Name *</label>
+                    <input type="text" id="name" name="name" required
+                        class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition"
+                        placeholder="John Doe" value="<?= htmlspecialchars($_POST['name'] ?? '') ?>">
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-stone-700 mb-2">Email Address *</label>
+                    <input type="email" id="email" name="email" required
+                        class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition"
+                        placeholder="john@example.com" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
                 </div>
             </div>
-        </div>
-    </section>
+            
+            <div>
+                <label for="phone" class="block text-sm font-medium text-stone-700 mb-2">Phone Number</label>
+                <input type="tel" id="phone" name="phone"
+                    class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition"
+                    placeholder="+91 98765 43210" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="issue_type" class="block text-sm font-medium text-stone-700 mb-2">Issue Type *</label>
+                    <select id="issue_type" name="issue_type" required
+                        class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition">
+                        <option value="">Select issue type</option>
+                        <option value="booking" <?= ($_POST['issue_type'] ?? '') === 'booking' ? 'selected' : '' ?>>Booking Issue</option>
+                        <option value="payment" <?= ($_POST['issue_type'] ?? '') === 'payment' ? 'selected' : '' ?>>Payment Problem</option>
+                        <option value="service" <?= ($_POST['issue_type'] ?? '') === 'service' ? 'selected' : '' ?>>Service Quality</option>
+                        <option value="vendor" <?= ($_POST['issue_type'] ?? '') === 'vendor' ? 'selected' : '' ?>>Vendor Issue</option>
+                        <option value="website" <?= ($_POST['issue_type'] ?? '') === 'website' ? 'selected' : '' ?>>Website Bug</option>
+                        <option value="account" <?= ($_POST['issue_type'] ?? '') === 'account' ? 'selected' : '' ?>>Account Problem</option>
+                        <option value="other" <?= ($_POST['issue_type'] ?? '') === 'other' ? 'selected' : '' ?>>Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="priority" class="block text-sm font-medium text-stone-700 mb-2">Priority Level</label>
+                    <select id="priority" name="priority"
+                        class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition">
+                        <option value="low" <?= ($_POST['priority'] ?? '') === 'low' ? 'selected' : '' ?>>Low</option>
+                        <option value="medium" <?= ($_POST['priority'] ?? '') === 'medium' ? 'selected' : '' ?>>Medium</option>
+                        <option value="high" <?= ($_POST['priority'] ?? '') === 'high' ? 'selected' : '' ?>>High</option>
+                        <option value="urgent" <?= ($_POST['priority'] ?? '') === 'urgent' ? 'selected' : '' ?>>Urgent</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div>
+                <label for="description" class="block text-sm font-medium text-stone-700 mb-2">Issue Description *</label>
+                <textarea id="description" name="description" required rows="6"
+                    class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none transition"
+                    placeholder="Please describe the issue in detail..."><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
+            </div>
+            
+            <button type="submit"
+                class="w-full bg-rose-600 hover:bg-rose-700 text-white py-4 rounded-xl font-semibold text-lg transition transform hover:scale-105">
+                Submit Report
+            </button>
+        </form>
+    </div>
 
-    <?php include 'includes/footer.php'; ?>
+    <!-- Contact Info -->
+    <div class="mt-12 bg-stone-900 rounded-2xl p-8 text-white text-center">
+        <div class="text-6xl mb-4">🚀</div>
+        <h2 class="heading text-2xl font-bold text-white mb-4">We're Here to Help</h2>
+        <p class="text-stone-300 max-w-2xl mx-auto mb-6">
+            Our support team reviews every report and responds within 24 hours. 
+            For urgent wedding-related issues, call us directly at +91 98765 43210.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="tel:+919876543210" 
+                class="inline-block bg-amber-500 hover:bg-amber-400 text-stone-900 px-6 py-3 rounded-xl font-semibold transition">
+                Call Support
+            </a>
+            <a href="<?= BASE_URL ?>contact.php" 
+                class="inline-block bg-white hover:bg-stone-100 text-stone-900 px-6 py-3 rounded-xl font-semibold transition">
+                Contact Us
+            </a>
+        </div>
+    </div>
+</main>
+
+<?php include 'includes/footer.php'; ?>
+
 </body>
 </html>

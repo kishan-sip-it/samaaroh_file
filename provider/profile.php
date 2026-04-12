@@ -1,341 +1,261 @@
 <?php
 require_once '../config/config.php';
 
-// AUTH CHECK: Must be logged in as provider
+// Auth Check
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'provider') {
-    setAlert("Please login to access your profile", "error");
+    setAlert("Please login as provider to access profile", "error");
     header("Location: " . BASE_URL . "login.php");
     exit();
 }
 
-// FETCH CURRENT USER DATA
-$stmt = $pdo->prepare("SELECT id, name, email, phone FROM users WHERE id = ?");
-$stmt->execute([$_SESSION['user_id']]);
-$user = $stmt->fetch();
-
-if (!$user) {
-    setAlert("User not found. Please login again.", "error");
-    session_destroy();
-    header("Location: " . BASE_URL . "login.php");
-    exit();
-}
-
-// FETCH PROVIDER STATISTICS
-$stmt = $pdo->prepare("
-    SELECT 
-        COUNT(*) as total_services,
-        SUM(CASE WHEN is_available = 1 THEN 1 ELSE 0 END) as active_services,
-        (SELECT COUNT(*) FROM bookings b 
-         JOIN services s ON b.service_id = s.id 
-         WHERE s.provider_id = ? AND b.status = 'pending') as pending_bookings,
-        (SELECT COUNT(*) FROM bookings b 
-         JOIN services s ON b.service_id = s.id 
-         WHERE s.provider_id = ? AND b.status = 'confirmed') as confirmed_bookings,
-        (SELECT SUM(b.total_price) FROM bookings b 
-         JOIN services s ON b.service_id = s.id 
-         WHERE s.provider_id = ? AND b.status = 'confirmed') as total_earnings
-    FROM services 
-    WHERE provider_id = ?
-");
-$stmt->execute([$_SESSION['user_id'], $_SESSION['user_id'], $_SESSION['user_id'], $_SESSION['user_id']]);
-$stats = $stmt->fetch();
-
-// HANDLE FORM SUBMISSION
+// Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name']);
+    $email = trim($_POST['email']);
     $phone = trim($_POST['phone']);
-    $current_password = $_POST['current_password'] ?? '';
-    $new_password = $_POST['new_password'] ?? '';
-    $confirm_password = $_POST['confirm_password'] ?? '';
+    $bio = trim($_POST['bio']);
+    $address = trim($_POST['address']);
     
-    $errors = [];
-    
-    // VALIDATE NAME
-    if (empty($name)) {
-        $errors[] = "Name cannot be empty";
-    }
-    
-    // VALIDATE PHONE (OPTIONAL BUT IF PROVIDED MUST BE VALID)
-    if (!empty($phone) && !preg_match('/^[0-9]{10}$/', $phone)) {
-        $errors[] = "Phone number must be 10 digits";
-    }
-    
-    // HANDLE PASSWORD CHANGE
-    $password_updated = false;
-    if (!empty($current_password) || !empty($new_password) || !empty($confirm_password)) {
-        $stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
-        $stmt->execute([$_SESSION['user_id']]);
-        $current_hash = $stmt->fetchColumn();
-        
-        if (!password_verify($current_password, $current_hash)) {
-            $errors[] = "Current password is incorrect";
-        } elseif (empty($new_password)) {
-            $errors[] = "New password cannot be empty";
-        } elseif ($new_password !== $confirm_password) {
-            $errors[] = "New passwords do not match";
-        } elseif (strlen($new_password) < 6) {
-            $errors[] = "New password must be at least 6 characters";
-        } else {
-            $password_updated = true;
-        }
-    }
-    
-    // UPDATE DATABASE IF NO ERRORS
-    if (empty($errors)) {
+    if (!empty($name) && !empty($email) && !empty($phone)) {
         try {
-            if ($password_updated) {
-                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("UPDATE users SET name = ?, phone = ?, password = ? WHERE id = ?");
-                $stmt->execute([$name, $phone, $hashed_password, $_SESSION['user_id']]);
-                setAlert("Profile updated successfully! Password changed.", "success");
-            } else {
-                $stmt = $pdo->prepare("UPDATE users SET name = ?, phone = ? WHERE id = ?");
-                $stmt->execute([$name, $phone, $_SESSION['user_id']]);
-                setAlert("Profile updated successfully!", "success");
-            }
+            $stmt = $pdo->prepare("
+                UPDATE users 
+                SET name = ?, email = ?, phone = ?, bio = ?, address = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$name, $email, $phone, $bio, $address, $_SESSION['user_id']]);
             
-            // UPDATE SESSION NAME
+            // Update session name
             $_SESSION['name'] = $name;
             
-            // REFRESH USER DATA
-            $stmt = $pdo->prepare("SELECT id, name, email, phone FROM users WHERE id = ?");
-            $stmt->execute([$_SESSION['user_id']]);
-            $user = $stmt->fetch();
+            setAlert("Profile updated successfully!", "success");
+            header("Location: " . BASE_URL . "provider/profile.php");
+            exit();
         } catch (PDOException $e) {
             error_log("Profile update error: " . $e->getMessage());
-            $errors[] = "Database error. Please try again.";
+            setAlert("Failed to update profile. Please try again.", "error");
         }
-    }
-    
-    // SHOW ERRORS
-    if (!empty($errors)) {
-        foreach ($errors as $error) {
-            setAlert($error, "error");
-        }
+    } else {
+        setAlert("Please fill in all required fields.", "error");
     }
 }
+
+// Fetch provider profile
+$stmt = $pdo->prepare("
+    SELECT u.*, COUNT(s.id) as service_count
+    FROM users u
+    LEFT JOIN services s ON u.id = s.provider_id
+    WHERE u.id = ?
+");
+$stmt->execute([$_SESSION['user_id']]);
+$profile = $stmt->fetch();
+
+// Fetch provider's services
+$stmt = $pdo->prepare("
+    SELECT * FROM services 
+    WHERE provider_id = ? 
+    ORDER BY id DESC
+");
+$stmt->execute([$_SESSION['user_id']]);
+$services = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile | Samaaroh</title>
+    <title>Provider Profile | Samaaroh</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .heading { font-family: 'Playfair Display', serif; }
-        .form-card { transition: transform 0.3s; }
-        .form-card:hover { transform: translateY(-2px); }
+        html { scroll-behavior: smooth; }
     </style>
-    <style>
-/* Minimal fallback styles for offline demo */
-body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-.btn { background: #e53e3e; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; display: inline-block; }
-.card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.alert { padding: 12px; border-radius: 4px; margin: 15px 0; }
-.alert-error { background: #fee; border-left: 4px solid #c53030; color: #c53030; }
-.alert-success { background: #efe; border-left: 4px solid #38a169; color: #38a169; }
-</style>
 </head>
 <body class="bg-stone-50 min-h-screen">
 
-    <!-- Navigation -->
-    <nav class="bg-white/90 backdrop-blur-sm sticky top-0 z-50 border-b border-stone-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center gap-2">
-                    <span class="text-3xl">✨</span>
-                    <a href="<?= BASE_URL ?>" class="heading text-2xl font-bold tracking-tight text-rose-700">SAMAAROH</a>
-                </div>
-                <div class="flex items-center gap-4">
-                    <a href="<?= BASE_URL ?>provider/dashboard.php" class="text-stone-600 hover:text-rose-600 font-medium text-sm">← Back to Dashboard</a>
-                    <a href="<?= BASE_URL ?>logout.php" class="text-stone-600 hover:text-rose-600 font-medium text-sm">Logout</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+<?php include '../includes/navbar.php'; ?>
 
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <?php displayAlert(); ?>
+<main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <?php displayAlert(); ?>
 
-        <div class="text-center mb-10">
-            <h1 class="heading text-3xl md:text-4xl font-bold text-stone-800">My Profile</h1>
-            <p class="text-stone-500 mt-2 max-w-2xl mx-auto">
-                Manage your account details and view your service statistics for Nadiad weddings
-            </p>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Profile Summary Card -->
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-2xl border border-stone-200 p-6 text-center">
-                    <div class="w-24 h-24 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-600 text-4xl">
-                        �
-                    </div>
-                    <h2 class="font-bold text-xl text-stone-800"><?= htmlspecialchars($user['name']) ?></h2>
-                    <p class="text-stone-500 mt-1"><?= htmlspecialchars($user['email']) ?></p>
-                    <p class="text-stone-500 mt-1">
-                        <?php if (!empty($user['phone'])): ?>
-                            <span class="text-green-600">✓</span> Verified Phone: <?= htmlspecialchars($user['phone']) ?>
-                        <?php else: ?>
-                            <span class="text-amber-600">!</span> Add phone for booking alerts
-                        <?php endif; ?>
-                    </p>
-                    
-                    <div class="mt-6 pt-6 border-t border-stone-100">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-stone-500">Account Type</span>
-                            <span class="font-medium text-stone-800">Service Provider</span>
-                        </div>
-                        <div class="flex justify-between text-sm mt-2">
-                            <span class="text-stone-500">Member Since</span>
-                            <span class="font-medium text-stone-800">
-                                <?php
-                                $stmt = $pdo->prepare("SELECT created_at FROM users WHERE id = ?");
-                                $stmt->execute([$_SESSION['user_id']]);
-                                $created = $stmt->fetchColumn();
-                                echo date('M Y', strtotime($created));
-                                ?>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Provider Statistics -->
-                <div class="mt-6 bg-blue-50 rounded-xl p-4">
-                    <h3 class="font-bold text-blue-800 mb-3">📊 Your Statistics</h3>
-                    <ul class="text-blue-700 text-sm space-y-2">
-                        <li class="flex justify-between">
-                            <span>Total Services:</span>
-                            <span class="font-medium"><?= $stats['total_services'] ?? 0 ?></span>
-                        </li>
-                        <li class="flex justify-between">
-                            <span>Active Services:</span>
-                            <span class="font-medium text-green-600"><?= $stats['active_services'] ?? 0 ?></span>
-                        </li>
-                        <li class="flex justify-between">
-                            <span>Pending Bookings:</span>
-                            <span class="font-medium text-amber-600"><?= $stats['pending_bookings'] ?? 0 ?></span>
-                        </li>
-                        <li class="flex justify-between">
-                            <span>Confirmed Bookings:</span>
-                            <span class="font-medium text-green-600"><?= $stats['confirmed_bookings'] ?? 0 ?></span>
-                        </li>
-                        <li class="flex justify-between pt-2 border-t border-blue-200 mt-2">
-                            <span class="font-bold">Total Earnings:</span>
-                            <span class="font-bold text-rose-600">₹<?= number_format($stats['total_earnings'] ?? 0, 0) ?></span>
-                        </li>
-                    </ul>
-                </div>
-                
-                <div class="mt-6 bg-amber-50 rounded-xl p-4">
-                    <h3 class="font-bold text-amber-800 mb-2">💡 Provider Tips</h3>
-                    <ul class="text-amber-700 text-sm space-y-1">
-                        <li>• Keep services updated with real Nadiad wedding photos</li>
-                        <li>• Respond to bookings within 12 hours for better visibility</li>
-                        <li>• Add phone number to receive SMS booking alerts</li>
-                        <li>• Update availability status when on vacation</li>
-                    </ul>
+    <!-- Profile Header -->
+    <div class="bg-white rounded-2xl border border-stone-200 p-8 mb-8 shadow-sm">
+        <div class="flex flex-col md:flex-row items-center gap-8">
+            <!-- Profile Picture -->
+            <div class="flex-shrink-0">
+                <div class="w-32 h-32 bg-gradient-to-br from-rose-100 to-amber-100 rounded-full flex items-center justify-center">
+                    <span class="text-5xl font-bold text-rose-600">
+                        <?= substr(strtoupper($profile['name']), 0, 2) ?>
+                    </span>
                 </div>
             </div>
             
-            <!-- Profile Form -->
-            <div class="lg:col-span-2">
-                <div class="form-card bg-white rounded-2xl border border-stone-200 shadow-lg p-8">
-                    <h2 class="text-2xl font-bold text-stone-800 mb-6">Edit Profile</h2>
-                    
-                    <form method="POST" class="space-y-6">
-                        <!-- Name Field -->
-                        <div>
-                            <label class="block text-sm font-medium text-stone-700 mb-1">Business Name <span class="text-rose-500">*</span></label>
-                            <input type="text" name="name" required 
-                                   class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                                   value="<?= htmlspecialchars($user['name']) ?>"
-                                   placeholder="e.g., Dbagiwala Nadiad">
-                        </div>
-                        
-                        <!-- Email Field (Read-only) -->
-                        <div>
-                            <label class="block text-sm font-medium text-stone-700 mb-1">Email Address</label>
-                            <input type="email" 
-                                   class="w-full px-4 py-3 rounded-lg border border-stone-200 bg-stone-50 text-stone-500 cursor-not-allowed"
-                                   value="<?= htmlspecialchars($user['email']) ?>" disabled>
-                            <p class="text-xs text-stone-400 mt-1">Email cannot be changed. Contact admin if needed.</p>
-                        </div>
-                        
-                        <!-- Phone Field -->
-                        <div>
-                            <label class="block text-sm font-medium text-stone-700 mb-1">Phone Number (For Booking Alerts)</label>
-                            <input type="tel" name="phone" 
-                                   class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                                   placeholder="10-digit mobile number"
-                                   value="<?= htmlspecialchars($user['phone'] ?? '') ?>"
-                                   pattern="[0-9]{10}"
-                                   maxlength="10">
-                            <p class="text-xs text-stone-400 mt-1">We'll send SMS alerts when customers book your services</p>
-                        </div>
-                        
-                        <!-- Password Section -->
-                        <div class="pt-6 border-t border-stone-200">
-                            <h3 class="font-bold text-lg text-stone-800 mb-4">Change Password</h3>
-                            
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-stone-700 mb-1">Current Password</label>
-                                    <input type="password" name="current_password" 
-                                           class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent">
-                                    <p class="text-xs text-stone-400 mt-1">Leave blank to keep current password</p>
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-stone-700 mb-1">New Password</label>
-                                    <input type="password" name="new_password" 
-                                           class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-stone-700 mb-1">Confirm New Password</label>
-                                    <input type="password" name="confirm_password" 
-                                           class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Action Buttons -->
-                        <div class="pt-6 border-t border-stone-200 flex gap-4">
-                            <button type="submit" 
-                                    class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl text-lg transition">
-                                Save Changes
-                            </button>
-                            <a href="<?= BASE_URL ?>provider/dashboard.php" 
-                               class="flex-1 bg-stone-200 hover:bg-stone-300 text-stone-800 font-medium py-3 rounded-xl text-center transition">
-                                Cancel
-                            </a>
-                        </div>
-                    </form>
+            <!-- Profile Info -->
+            <div class="flex-1 text-center md:text-left">
+                <h1 class="heading text-3xl font-bold text-stone-800 mb-2">
+                    <?= htmlspecialchars($profile['name']) ?>
+                </h1>
+                <div class="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
+                    <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                        Provider
+                    </span>
+                    <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full 
+                        <?= $profile['is_verified'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' ?>">
+                        <?= $profile['is_verified'] ? 'Verified' : 'Unverified' ?>
+                    </span>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <span class="text-stone-500">Email</span>
+                        <span class="font-medium text-stone-800"><?= htmlspecialchars($profile['email']) ?></span>
+                    </div>
+                    <div>
+                        <span class="text-stone-500">Phone</span>
+                        <span class="font-medium text-stone-800"><?= htmlspecialchars($profile['phone']) ?></span>
+                    </div>
+                    <div>
+                        <span class="text-stone-500">Services</span>
+                        <span class="font-medium text-stone-800"><?= $profile['service_count'] ?> listed</span>
+                    </div>
+                    <div>
+                        <span class="text-stone-500">Member Since</span>
+                        <span class="font-medium text-stone-800">
+                            <?php
+                            $stmt = $pdo->prepare("SELECT created_at FROM users WHERE id = ?");
+                            $stmt->execute([$_SESSION['user_id']]);
+                            $created = $stmt->fetchColumn();
+                            echo date('M Y', strtotime($created));
+                            ?>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
 
-    <!-- Footer -->
-    <footer class="bg-stone-900 text-stone-300 py-10 mt-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div class="flex justify-center mb-6">
-                <span class="text-4xl">✨</span>
-                <h2 class="heading text-2xl font-bold text-white ml-2">SAMAAROH</h2>
+    <!-- Edit Profile Form -->
+    <div class="bg-white rounded-2xl border border-stone-200 p-8 shadow-sm">
+        <h2 class="heading text-2xl font-bold text-stone-800 mb-6">Edit Profile</h2>
+        
+        <form method="POST" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-stone-700 mb-2">Business Name</label>
+                    <input type="text" id="name" name="name" required
+                        class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition"
+                        value="<?= htmlspecialchars($profile['name']) ?>">
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-stone-700 mb-2">Email Address</label>
+                    <input type="email" id="email" name="email" required
+                        class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition"
+                        value="<?= htmlspecialchars($profile['email']) ?>">
+                </div>
             </div>
-            <p class="max-w-2xl mx-auto mb-6">
-                Nadiad's trusted wedding planning platform. Connecting families with verified vendors since 2026.
-            </p>
-            <p class="text-stone-500 text-sm">
-                &copy; 2026 Samaaroh. Made with ❤️ in Nadiad for Gujarati weddings.<br>
-                BCA Final Year Project by Kishan Marwadi
-            </p>
-        </div>
-    </footer>
+            
+            <div>
+                <label for="phone" class="block text-sm font-medium text-stone-700 mb-2">Phone Number</label>
+                <input type="tel" id="phone" name="phone" required
+                    class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition"
+                    value="<?= htmlspecialchars($profile['phone']) ?>">
+            </div>
+            
+            <div>
+                <label for="address" class="block text-sm font-medium text-stone-700 mb-2">Business Address</label>
+                <textarea id="address" name="address" rows="3"
+                    class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none transition"
+                    placeholder="Your business address..."><?= htmlspecialchars($profile['address']) ?></textarea>
+            </div>
+            
+            <div>
+                <label for="bio" class="block text-sm font-medium text-stone-700 mb-2">About Your Business</label>
+                <textarea id="bio" name="bio" rows="4"
+                    class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none transition"
+                    placeholder="Tell customers about your wedding services..."><?= htmlspecialchars($profile['bio']) ?></textarea>
+            </div>
+            
+            <div class="flex gap-4">
+                <button type="submit"
+                    class="bg-rose-600 hover:bg-rose-700 text-white px-8 py-3 rounded-xl font-semibold transition">
+                    Update Profile
+                </button>
+                <a href="<?= BASE_URL ?>provider/dashboard.php" 
+                    class="bg-stone-200 hover:bg-stone-300 text-stone-700 px-8 py-3 rounded-xl font-semibold transition">
+                    Back to Dashboard
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Your Services -->
+    <div class="mt-8">
+        <h2 class="heading text-2xl font-bold text-stone-800 mb-6">Your Services</h2>
+        
+        <?php if (empty($services)): ?>
+            <div class="bg-white rounded-2xl border border-stone-200 p-8 text-center">
+                <div class="text-6xl mb-4">🎪</div>
+                <h3 class="font-bold text-xl text-stone-800 mb-2">No services listed yet</h3>
+                <p class="text-stone-600 mb-6">Add your wedding services to start receiving bookings!</p>
+                <a href="<?= BASE_URL ?>provider/add_service.php" 
+                    class="inline-block bg-rose-600 text-white px-6 py-3 rounded-xl font-semibold transition">
+                    Add First Service
+                </a>
+            </div>
+        <?php else: ?>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <?php foreach ($services as $service): ?>
+                    <div class="bg-white rounded-2xl border border-stone-200 p-6 hover:shadow-lg transition">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="font-bold text-lg text-stone-800"><?= htmlspecialchars($service['title']) ?></h3>
+                                <p class="text-stone-500 text-sm"><?= ucfirst($service['category']) ?></p>
+                            </div>
+                            <span class="text-2xl">
+                                <?php
+                                $icons = [
+                                    'bagiwala' => '🛺',
+                                    'party-plot' => '🎪',
+                                    'catering' => '🍲',
+                                    'photography' => '📸',
+                                    'decoration' => '🎨',
+                                    'music' => '🎵'
+                                ];
+                                echo $icons[$service['category']] ?? '🎪';
+                                ?>
+                            </span>
+                        </div>
+                        
+                        <p class="text-stone-600 text-sm mb-4">
+                            <?= htmlspecialchars(substr($service['description'], 0, 100)) ?>...
+                        </p>
+                        
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-xl font-bold text-stone-900">₹<?= number_format($service['price'], 0) ?></p>
+                                <p class="text-stone-500 text-xs">per service</p>
+                            </div>
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                <?= $service['is_available'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' ?>">
+                                <?= $service['is_available'] ? 'Available' : 'Unavailable' ?>
+                            </span>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            
+            <div class="text-center mt-8">
+                <a href="<?= BASE_URL ?>provider/add_service.php" 
+                    class="inline-block bg-rose-600 text-white px-6 py-3 rounded-xl font-semibold transition">
+                    Add New Service
+                </a>
+            </div>
+        <?php endif; ?>
+    </div>
+</main>
+
+<?php include '../includes/footer.php'; ?>
 
 </body>
 </html>

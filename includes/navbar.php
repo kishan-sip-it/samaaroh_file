@@ -9,9 +9,6 @@ require_once __DIR__ . '/../config/config.php';
         <div class="flex justify-between h-20 items-center">
             <!-- Logo & Brand -->
             <div class="flex items-center gap-2">
-                <!-- Logo Image (uncomment if you have logo.png) -->
-                <!-- <img src="<?= BASE_URL ?>assets/logo.png" alt="Samaaroh" class="h-10 w-10"> -->
-                
                 <!-- SVG Logo (current) -->
                 <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="20" cy="20" r="16" stroke="#e11d48" stroke-width="2" fill="none"/>
@@ -39,9 +36,9 @@ require_once __DIR__ . '/../config/config.php';
                         <a href="<?= BASE_URL ?>admin/dashboard.php" class="text-stone-600 hover:text-rose-600 font-medium transition">Admin Panel</a>
                     <?php endif; ?>
                 <?php else: ?>
-                    <a href="<?= BASE_URL ?>#services" class="text-stone-600 hover:text-rose-600 font-medium transition">Services</a>
-                    <a href="<?= BASE_URL ?>#packages" class="text-stone-600 hover:text-rose-600 font-medium transition">Packages</a>
-                    <a href="<?= BASE_URL ?>#how-it-works" class="text-stone-600 hover:text-rose-600 font-medium transition">How It Works</a>
+                    <a href="<?= BASE_URL ?>#services" class="text-stone-600 hover:text-rose-600 font-medium transition smooth-scroll">Services</a>
+                    <a href="<?= BASE_URL ?>#packages" class="text-stone-600 hover:text-rose-600 font-medium transition smooth-scroll">Packages</a>
+                    <a href="<?= BASE_URL ?>#how-it-works" class="text-stone-600 hover:text-rose-600 font-medium transition smooth-scroll">How It Works</a>
                 <?php endif; ?>
                 <a href="<?= BASE_URL ?>report.php" class="text-stone-600 hover:text-rose-600 font-medium transition">Report Issue</a>
                 <a href="<?= BASE_URL ?>feedback.php" class="text-stone-600 hover:text-rose-600 font-medium transition">Feedback</a>
@@ -119,16 +116,16 @@ require_once __DIR__ . '/../config/config.php';
             <?php endif; ?>
             <a href="<?= BASE_URL ?>logout.php" class="block mt-4 bg-stone-100 text-stone-700 py-3 rounded-lg text-center font-medium hover:bg-stone-200 transition">Logout</a>
         <?php else: ?>
-            <a href="<?= BASE_URL ?>#services" class="block py-3 border-b border-stone-100 text-lg font-medium text-stone-800 hover:text-rose-600 transition">Services</a>
-            <a href="<?= BASE_URL ?>#packages" class="block py-3 border-b border-stone-100 text-lg font-medium text-stone-800 hover:text-rose-600 transition">Packages</a>
-            <a href="<?= BASE_URL ?>#how-it-works" class="block py-3 border-b border-stone-100 text-lg font-medium text-stone-800 hover:text-rose-600 transition">How It Works</a>
+            <a href="<?= BASE_URL ?>#services" class="block py-3 border-b border-stone-100 text-lg font-medium text-stone-800 hover:text-rose-600 transition smooth-scroll">Services</a>
+            <a href="<?= BASE_URL ?>#packages" class="block py-3 border-b border-stone-100 text-lg font-medium text-stone-800 hover:text-rose-600 transition smooth-scroll">Packages</a>
+            <a href="<?= BASE_URL ?>#how-it-works" class="block py-3 border-b border-stone-100 text-lg font-medium text-stone-800 hover:text-rose-600 transition smooth-scroll">How It Works</a>
             <a href="<?= BASE_URL ?>login.php" class="block mt-4 bg-stone-100 text-stone-700 py-3 rounded-lg text-center font-medium hover:bg-stone-200 transition">Login</a>
             <a href="<?= BASE_URL ?>register.php" class="block mt-2 bg-rose-600 text-white py-3 rounded-lg text-center font-medium hover:bg-rose-700 transition">Get Started</a>
         <?php endif; ?>
     </div>
 </div>
 
-<!-- Mobile Menu Scripts -->
+<!-- Mobile Menu Scripts + Smooth Scroll -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const menuButton = document.querySelector('button.md\\:hidden');
@@ -160,6 +157,25 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', () => {
             mobileMenu.classList.add('translate-x-full');
             overlay.classList.add('hidden');
+        });
+    });
+    
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a.smooth-scroll').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            const href = this.getAttribute('href');
+            if (href && href.startsWith('#')) {
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    const offset = 80; // Account for sticky navbar
+                    const targetPosition = target.offsetTop - offset;
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            }
         });
     });
 });

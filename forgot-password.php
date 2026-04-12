@@ -5,34 +5,50 @@ $message = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $email = trim($_POST['email']);
-
-    if (!empty($email)) {
+    
+    if (empty($email)) {
+        $message = "<div class='bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded'>
+                      <strong>Error!</strong> Please enter your email address.
+                    </div>";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $message = "<div class='bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded'>
+                      <strong>Error!</strong> Please enter a valid email address.
+                    </div>";
+    } else {
         try {
-            // Check if user exists
-            $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+            $stmt = $pdo->prepare("SELECT id, name FROM users WHERE email = ?");
             $stmt->execute([$email]);
             $user = $stmt->fetch();
-
+            
             if ($user) {
-                // Generate reset token + expiry
-                $token = bin2hex(random_bytes(16));
-                $expiry = date("Y-m-d H:i:s", strtotime("+1 hour"));
-
-                $stmt = $pdo->prepare("UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE email = ?");
+                // Generate reset token
+                $token = bin2hex(random_bytes(32));
+                $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
+                
+                // Save token to database
+                $stmt = $pdo->prepare("UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?");
                 $stmt->execute([$token, $expiry, $email]);
-
-                // In real hosting: send email. For local test: show reset link
-                $reset_link = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] . BASE_URL . "reset-password.php?token=$token";
-                $message = "Reset link (valid 1 hour): <a href='$reset_link' target='_blank'>$reset_link</a>";
+                
+                // In a real application, you would send an email here
+                // For demo, we'll show the reset link
+                $reset_link = BASE_URL . "reset-password.php?token=" . $token;
+                
+                $message = "<div class='bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded'>
+                              <strong>Success!</strong> Password reset link has been sent to your email.
+                              <br><small>For demo: <a href='$reset_link' class='underline'>$reset_link</a></small>
+                            </div>";
             } else {
-                $message = "No account found with that email.";
+                // Don't reveal if email exists or not
+                $message = "<div class='bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded'>
+                              <strong>Success!</strong> If an account exists with this email, a password reset link has been sent.
+                            </div>";
             }
         } catch (PDOException $e) {
-            error_log("Forgot password error: " . $e->getMessage());
-            $message = "System error. Please try again later.";
+            error_log("Password reset error: " . $e->getMessage());
+            $message = "<div class='bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded'>
+                          <strong>Error!</strong> System error. Please try again later.
+                        </div>";
         }
-    } else {
-        $message = "Please enter your email.";
     }
 }
 ?>
@@ -47,78 +63,58 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <style>
         body { font-family: 'Inter', sans-serif; }
         .heading { font-family: 'Playfair Display', serif; }
+        html { scroll-behavior: smooth; }
     </style>
-    <style>
-/* Minimal fallback styles for offline demo */
-body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-.btn { background: #e53e3e; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; display: inline-block; }
-.card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.alert { padding: 12px; border-radius: 4px; margin: 15px 0; }
-.alert-error { background: #fee; border-left: 4px solid #c53030; color: #c53030; }
-.alert-success { background: #efe; border-left: 4px solid #38a169; color: #38a169; }
-.alert-info { background: #e3f2fd; border-left: 4px solid #2196f3; color: #1976d2; }
-</style>
 </head>
-<body class="bg-stone-50 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+<body class="bg-stone-50 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full space-y-8 p-8">
         <!-- Header -->
-        <div class="bg-gradient-to-r from-rose-600 to-amber-500 p-6 text-center">
-            <div class="flex justify-center mb-3">
-                <span class="text-4xl">🔐</span>
+        <div class="text-center">
+            <div class="flex justify-center mb-4">
+                <svg width="60" height="60" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="bg-gradient-to-br from-rose-600 to-amber-500 rounded-2xl p-3 shadow-lg">
+                    <circle cx="20" cy="20" r="16" stroke="white" stroke-width="2" fill="none"/>
+                    <circle cx="20" cy="20" r="12" stroke="white" stroke-width="1.5" fill="none"/>
+                    <path d="M20 8 L24 16 L20 24 L16 16 Z" fill="white"/>
+                    <path d="M20 8 L22 14 L20 16 L18 14 Z" fill="#fbbf24"/>
+                </svg>
             </div>
-            <h1 class="heading text-2xl md:text-3xl font-bold text-white">SAMAAROH</h1>
-            <p class="text-amber-100 mt-1 text-sm">Reset Your Password</p>
+            <h2 class="heading text-3xl font-bold text-stone-800">Forgot Password?</h2>
+            <p class="text-stone-600 mt-2">No worries, we'll send you reset instructions.</p>
         </div>
-        
+
+        <!-- Alert -->
+        <?php echo $message; ?>
+
         <!-- Forgot Password Form -->
-        <div class="p-6 md:p-8">
-            <?php if ($message): ?>
-                <div class="alert alert-info">
-                    <?= $message ?>
-                </div>
-            <?php endif; ?>
-            
-            <h2 class="text-xl font-bold text-stone-800 text-center mb-4">Forgot Password?</h2>
-            <p class="text-stone-600 text-center text-sm mb-6">
-                Enter your email address and we'll send you a link to reset your password.
-            </p>
-            
-            <form method="POST" id="forgot-form" class="space-y-5">
-                <div>
-                    <label for="email" class="block text-sm font-medium text-stone-700 mb-1.5">Email Address</label>
-                    <input type="email" id="email" name="email" required 
-                           class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                           placeholder="your@email.com"
-                           value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
-                    <p class="text-xs text-stone-400 mt-1">
-                        We'll send a reset link to this email address
-                    </p>
-                </div>
-                
-                <button type="submit" 
-                        class="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-3.5 rounded-xl transition duration-200 shadow-md hover:shadow-lg">
-                    Send Reset Link
-                </button>
-            </form>
-            
-            <!-- Back to Login -->
-            <div class="mt-8 pt-6 border-t border-stone-100">
-                <p class="text-center text-sm text-stone-600">
-                    Remember your password? 
-                    <a href="<?= BASE_URL ?>login.php" class="font-medium text-rose-600 hover:text-rose-700">Back to Login</a>
-                </p>
-                <p class="text-center text-xs text-stone-400 mt-3">
-                    © 2026 Samaaroh. Made with ❤️ in Nadiad for Gujarati weddings.
-                </p>
+        <form method="POST" class="space-y-6">
+            <div>
+                <label for="email" class="block text-sm font-medium text-stone-700 mb-2">
+                    Email Address
+                </label>
+                <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition"
+                    placeholder="Enter your email"
+                >
             </div>
+
+            <button
+                type="submit"
+                class="w-full bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl font-semibold transition transform hover:scale-105"
+            >
+                Send Reset Link
+            </button>
+        </form>
+
+        <!-- Back to Login -->
+        <div class="text-center">
+            <a href="<?= BASE_URL ?>login.php" class="text-rose-600 hover:text-rose-700 font-semibold transition">
+                ← Back to Login
+            </a>
         </div>
     </div>
-
-    <script>
-    // Auto-focus email field
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('email').focus();
-    });
-    </script>
 </body>
 </html>
