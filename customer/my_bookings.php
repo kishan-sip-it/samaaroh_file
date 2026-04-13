@@ -306,7 +306,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 11-4 0v2a2 2 0 104 0v6a2 2 0 11-4 0V9a4 4 0 118 0v6a4 4 0 01-8 0V5z" />
                                             </svg>
-                                            Pay Final 70%
+                                            Pay Final 60%
                                         </a>
                                     </div>
                                     <a href="#" class="text-rose-600 text-sm font-medium hover:underline">
@@ -492,7 +492,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 11-4 0v2a2 2 0 104 0v6a2 2 0 11-4 0V9a4 4 0 118 0v6a4 4 0 01-8 0V5z" />
                                                     </svg>
-                                                    Pay Final 70%
+                                                    Pay Final 60%
                                                 </a>
                                             </div>
                                             <a href="#" class="text-rose-600 text-sm font-medium hover:underline">

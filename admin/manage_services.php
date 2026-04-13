@@ -131,11 +131,14 @@ $services = $stmt->fetchAll();
                     </select>
                 </div>
                 
-                <div class="flex items-end">
+                <div class="flex items-end gap-3">
                     <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg font-medium transition">
                         Filter
                     </button>
-                    <a href="<?= BASE_URL ?>admin/manage_services.php" class="text-stone-600 hover:text-rose-600 font-medium">
+                    <a href="<?= BASE_URL ?>admin/manage_services.php" class="inline-flex items-center px-4 py-2 bg-stone-600 hover:bg-stone-700 text-white font-medium rounded-lg transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                         Clear
                     </a>
                 </div>
@@ -188,7 +191,7 @@ $services = $stmt->fetchAll();
                                                ($service['category'] === 'photography' ? 'bg-blue-100 text-blue-800' : 
                                                ($service['category'] === 'decoration' ? 'bg-purple-100 text-purple-800' : 
                                                ($service['category'] === 'music' ? 'bg-green-100 text-green-800' : 
-                                               ($service['category'] === 'venue' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')) ?>">
+                                               ($service['category'] === 'venue' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')))) ?>">
                                             <?= ucfirst($service['category']) ?>
                                         </span>
                                     </td>

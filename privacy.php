@@ -31,7 +31,7 @@
                     <h2 class="heading text-2xl font-bold text-stone-800 mb-4">1. Introduction</h2>
                     <p class="text-stone-600 mb-4">
                         Samaaroh, we are committed to protecting your privacy. This Privacy Policy explains how we collect, 
-                        use, disclose, and safeguard your information when you use our wedding planning platform serving Nadiad, Gujarat.
+                        use, disclose, and safeguard your information when you use our wedding planning platform.
                     </p>
                     <p class="text-stone-600">
                         By using Samaaroh, you agree to the collection and use of information in accordance with this policy.
@@ -193,7 +193,7 @@
                     <div class="bg-stone-50 rounded-xl p-4 mt-4">
                         <p class="text-stone-600"><strong>Email:</strong> privacy@samaaroh.com</p>
                         <p class="text-stone-600"><strong>Phone:</strong> +91 98765 43210</p>
-                        <p class="text-stone-600"><strong>Address:</strong> Sangath Road, Nadiad, Gujarat 387002</p>
+                        <p class="text-stone-600"><strong>Address:</strong> Available upon request</p>
                     </div>
                 </section>
 

@@ -60,50 +60,62 @@ $stats = [
 
 // PDF GENERATION FUNCTION
 function generatePDFReport($users, $filter) {
-    require_once '../vendor/autoload.php'; // Make sure to install TCPDF via composer
+    // Generate a text-based report that can be saved as PDF
+    header('Content-Type: text/plain');
+    header('Content-Disposition: attachment;filename="samaaroh_users_' . $filter . '_' . date('Y-m-d') . '.txt"');
+    header('Cache-Control: max-age=0');
     
-    $pdf = new TCPDF();
-    $pdf->AddPage();
+    $content = "SAMAAROH USER REPORT\n";
+    $content .= "===================\n\n";
+    $content .= "Filter: " . ucfirst($filter) . " Users\n";
+    $content .= "Generated: " . date('d M, Y H:i:s') . "\n";
+    $content .= "Platform: Samaaroh Wedding Platform\n\n";
     
-    // Header
-    $pdf->SetFont('helvetica', 'B', 16);
-    $pdf->Cell(0, 10, 'Samaaroh User Report', 0, 1, 'C');
-    $pdf->SetFont('helvetica', '', 12);
-    $pdf->Cell(0, 8, 'Filter: ' . ucfirst($filter) . ' Users', 0, 1, 'C');
-    $pdf->Cell(0, 8, 'Generated: ' . date('d M, Y H:i'), 0, 1, 'C');
-    $pdf->Ln(10);
+    $content .= str_repeat("-", 120) . "\n";
+    $content .= sprintf("%-5s %-25s %-30s %-15s %-10s %-8s %-12s %-8s %-12s %-12s\n", 
+        "ID", "NAME", "EMAIL", "PHONE", "ROLE", "VERIFIED", "JOIN DATE", "BOOKINGS", "CONFIRMED", "REVENUE");
+    $content .= str_repeat("-", 120) . "\n";
     
-    // Table Header
-    $pdf->SetFont('helvetica', 'B', 10);
-    $pdf->Cell(15, 8, 'ID', 1, 0, 'C');
-    $pdf->Cell(40, 8, 'Name', 1, 0, 'C');
-    $pdf->Cell(50, 8, 'Email', 1, 0, 'C');
-    $pdf->Cell(30, 8, 'Phone', 1, 0, 'C');
-    $pdf->Cell(20, 8, 'Role', 1, 0, 'C');
-    $pdf->Cell(20, 8, 'Verified', 1, 0, 'C');
-    $pdf->Cell(25, 8, 'Bookings', 1, 1, 'C');
-    
-    // Table Data
-    $pdf->SetFont('helvetica', '', 9);
     foreach ($users as $user) {
-        $pdf->Cell(15, 8, $user['id'], 1, 0, 'C');
-        $pdf->Cell(40, 8, substr($user['name'], 0, 25), 1, 0, 'L');
-        $pdf->Cell(50, 8, substr($user['email'], 0, 35), 1, 0, 'L');
-        $pdf->Cell(30, 8, $user['phone'] ?: 'N/A', 1, 0, 'C');
-        $pdf->Cell(20, 8, ucfirst($user['role']), 1, 0, 'C');
-        $pdf->Cell(20, 8, $user['is_verified'] ? 'Yes' : 'No', 1, 0, 'C');
-        $pdf->Cell(25, 8, $user['total_bookings'], 1, 1, 'C');
+        $content .= sprintf("%-5d %-25s %-30s %-15s %-10s %-8s %-12s %-8d %-12d Rs.%-10s\n",
+            $user['id'],
+            substr($user['name'], 0, 24),
+            substr($user['email'], 0, 29),
+            substr($user['phone'] ?: 'N/A', 0, 14),
+            ucfirst($user['role']),
+            $user['is_verified'] ? 'Yes' : 'No',
+            date('d M Y', strtotime($user['created_at'])),
+            $user['total_bookings'],
+            $user['confirmed_bookings'],
+            number_format($user['total_revenue'], 0)
+        );
     }
     
-    // Footer
-    $pdf->Ln(10);
-    $pdf->SetFont('helvetica', 'I', 8);
-    $pdf->Cell(0, 5, 'Total Users: ' . count($users), 0, 1, 'C');
-    $pdf->Cell(0, 5, 'Samaaroh Wedding Platform - Nadiad', 0, 1, 'C');
+    $content .= str_repeat("-", 120) . "\n\n";
     
-    // Output
-    $filename = 'samaaroh_users_' . $filter . '_' . date('Y-m-d') . '.pdf';
-    $pdf->Output($filename, 'D');
+    $totalBookings = array_sum(array_column($users, 'total_bookings'));
+    $confirmedBookings = array_sum(array_column($users, 'confirmed_bookings'));
+    $totalRevenue = array_sum(array_column($users, 'total_revenue'));
+    
+    $content .= "SUMMARY STATISTICS\n";
+    $content .= "==================\n\n";
+    $content .= "Total Users: " . count($users) . "\n";
+    $content .= "Total Bookings: " . $totalBookings . "\n";
+    $content .= "Confirmed Bookings: " . $confirmedBookings . "\n";
+    $content .= "Total Revenue: Rs." . number_format($totalRevenue, 0) . "\n";
+    $content .= "Average Revenue per User: Rs." . number_format($totalRevenue / max(count($users), 1), 0) . "\n\n";
+    
+    $content .= "REPORT DETAILS\n";
+    $content .= "=============\n\n";
+    $content .= "This report contains user data from the Samaaroh wedding platform.\n";
+    $content .= "Users are filtered by: " . $filter . "\n";
+    $content .= "Revenue calculations include only confirmed bookings.\n";
+    $content .= "For questions, contact the platform administrator.\n\n";
+    
+    $content .= "Generated on: " . date('d M, Y H:i:s') . "\n";
+    $content .= "Report ID: " . uniqid('REPORT_') . "\n";
+    
+    echo $content;
 }
 
 // EXCEL GENERATION FUNCTION
@@ -227,9 +239,9 @@ function generateExcelReport($users, $filter) {
                         <button type="submit" name="export_type" value="pdf" 
                                 class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition flex items-center justify-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
-                            PDF
+                            Text Report
                         </button>
                         <button type="submit" name="export_type" value="excel" 
                                 class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition flex items-center justify-center gap-2">
@@ -258,9 +270,9 @@ function generateExcelReport($users, $filter) {
                         <button type="submit" name="export_type" value="pdf" 
                                 class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition flex items-center justify-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
-                            PDF
+                            Text Report
                         </button>
                         <button type="submit" name="export_type" value="excel" 
                                 class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition flex items-center justify-center gap-2">
@@ -289,9 +301,9 @@ function generateExcelReport($users, $filter) {
                         <button type="submit" name="export_type" value="pdf" 
                                 class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition flex items-center justify-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
-                            PDF
+                            Text Report
                         </button>
                         <button type="submit" name="export_type" value="excel" 
                                 class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition flex items-center justify-center gap-2">

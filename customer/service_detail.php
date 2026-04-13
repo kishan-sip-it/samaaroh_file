@@ -152,8 +152,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden mb-8">
             <!-- Main Image -->
             <div class="relative h-96 bg-stone-100">
-                <?php if (!empty($service['image'])): ?>
-                    <img src="<?= UPLOADS_URL . 'services/' . htmlspecialchars($service['image']) ?>" 
+                <?php if (!empty($service['image_path'])): ?>
+                    <img src="<?= UPLOADS_URL . htmlspecialchars($service['image_path']) ?>" 
                          alt="<?= htmlspecialchars($service['title']) ?>"
                          class="w-full h-full object-cover">
                 <?php else: ?>
@@ -268,6 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
 
                             <form method="POST" class="space-y-4">
+                                <input type="hidden" name="price" id="calculatedPrice" value="<?= htmlspecialchars($service['price']) ?>">
                                 <div>
                                     <label class="block text-sm font-medium text-stone-700 mb-1">Event Date</label>
                                     <input type="date" name="event_date" required
@@ -292,7 +293,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <?php
                                             // Sample dishes - in real implementation, these would come from database
                                             $sample_dishes = [
-                                                ['name' => 'Gujarati Thali', 'price' => 350],
+                                                ['name' => 'Traditional Thali', 'price' => 350],
                                                 ['name' => 'Punjabi Thali', 'price' => 400],
                                                 ['name' => 'South Indian Thali', 'price' => 300],
                                                 ['name' => 'Chinese Combo', 'price' => 250],

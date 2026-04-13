@@ -30,7 +30,7 @@ require_once __DIR__ . '/../config/config.php';
                 </div>
                 
                 <p class="text-stone-400 mb-4 leading-relaxed">
-                    Nadiad's premier wedding planning platform connecting families with verified vendors since 2026. 
+Premier wedding planning platform connecting families with verified vendors since 2026. 
                     From traditional bagiwala to luxury venues - we make your dream wedding a reality.
                 </p>
                 
@@ -89,7 +89,7 @@ require_once __DIR__ . '/../config/config.php';
                 <ul class="space-y-3">
                     <li><a href="<?= BASE_URL ?>#services" class="text-stone-400 hover:text-rose-400 transition-colors duration-300 flex items-center group">
                         <span class="w-1.5 h-1.5 bg-rose-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                        Buggy Services
+                        Baggi Services
                     </a></li>
                     <li><a href="<?= BASE_URL ?>#services" class="text-stone-400 hover:text-rose-400 transition-colors duration-300 flex items-center group">
                         <span class="w-1.5 h-1.5 bg-rose-400 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
@@ -186,7 +186,7 @@ require_once __DIR__ . '/../config/config.php';
                     &copy; 2026 Samaaroh Wedding Planning Platform. All rights reserved.
                 </p>
                 <p class="text-stone-500 text-xs">
-                    BCA Final Year Project • Kishan Marwadi, Shainy Jadav, Kush Patel • Made with ❤️ in Nadiad
+                    BCA Final Year Project • Kishan Marwadi, Shainy Jadav, Kush Patel • Made with ❤️
                 </p>
             </div>
             

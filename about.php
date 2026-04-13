@@ -21,7 +21,7 @@
     <div class="text-center mb-16">
         <h1 class="heading text-4xl md:text-5xl font-bold text-stone-800">About Samaaroh</h1>
         <p class="text-stone-500 mt-4 max-w-2xl mx-auto">
-            Nadiad's trusted wedding planning platform connecting families with verified vendors since 2026
+Trusted wedding planning platform connecting families with verified vendors since 2026
         </p>
     </div>
 
@@ -29,20 +29,20 @@
         <div>
             <h2 class="heading text-3xl font-bold text-stone-800 mb-6">Our Story</h2>
             <p class="text-stone-600 mb-4">
-                Samaaroh was born from a simple observation: wedding planning in Nadiad is fragmented. Families spend months contacting bagiwalas, party plots, caterers, and photographers separately - often with inconsistent quality and last-minute cancellations.
+                Samaaroh was born from a simple observation: wedding planning is fragmented. Families spend months contacting vendors, party plots, caterers, and photographers separately - often with inconsistent quality and last-minute cancellations.
             </p>
             <p class="text-stone-600 mb-4">
                 Founded in 2026 by Kishan Marwadi (BCA student), Samaaroh solves this by creating a unified platform where verified vendors showcase their services and families book everything in one place - with transparent pricing and reliable 12-hour acceptance workflow.
             </p>
             <p class="text-stone-600">
-                Today, we proudly serve hundreds of Nadiad families and partner with 50+ verified vendors across Sangath, Mahudi Road, and central Nadiad areas.
+                Today, we proudly serve hundreds of families and partner with 50+ verified vendors across various areas.
             </p>
         </div>
         <div class="bg-gradient-to-br from-rose-50 to-amber-50 rounded-2xl p-8 text-center">
             <div class="text-8xl mb-4">✨</div>
             <h3 class="heading text-2xl font-bold text-stone-800 mb-2">"One Platform, Perfect Wedding"</h3>
             <p class="text-stone-600">
-                Our mission: Make Gujarati wedding planning stress-free, transparent, and joyful for every family in Nadiad
+                Our mission: Make wedding planning stress-free, transparent, and joyful for every family
             </p>
         </div>
     </div>
@@ -102,7 +102,7 @@
                 </div>
             </div>
             <p class="text-stone-300">
-                We're proud to have transformed wedding planning for hundreds of families in Nadiad, making it a joyful experience rather than a stressful chore.
+                We're proud to have transformed wedding planning for hundreds of families, making it a joyful experience rather than a stressful chore.
             </p>
         </div>
         
@@ -120,16 +120,16 @@
                     </div>
                 </div>
                 <p class="text-stone-600">
-                    Led by a passionate team of wedding enthusiasts and tech professionals, we're committed to revolutionizing wedding planning in Gujarat.
+                    Led by a passionate team of wedding enthusiasts and tech professionals, we're committed to revolutionizing wedding planning.
                 </p>
             </div>
         </div>
     </div>
 
     <div class="bg-stone-900 rounded-2xl p-12 text-center text-white">
-        <h2 class="heading text-3xl font-bold mb-4">Join Nadiad's Wedding Revolution</h2>
+        <h2 class="heading text-3xl font-bold mb-4">Join the Wedding Revolution</h2>
         <p class="text-stone-300 max-w-2xl mx-auto mb-8">
-            Whether you're planning your dream wedding or offering wedding services in Nadiad, Samaaroh connects you with the right people at the right time.
+            Whether you're planning your dream wedding or offering wedding services, Samaaroh connects you with the right people at the right time.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="<?= BASE_URL ?>register.php" class="bg-rose-600 hover:bg-rose-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition">

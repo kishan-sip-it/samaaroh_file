@@ -41,7 +41,7 @@ if ($booking['provider_id'] != $_SESSION['user_id']) {
     exit();
 }
 
-// CHECK 12-HOUR WINDOW (CRITICAL FOR GUJARATI WEDDING WORKFLOW)
+// CHECK 12-HOUR WINDOW (CRITICAL FOR WEDDING WORKFLOW)
 $booking_time = strtotime($booking['created_at']); // Use created_at instead of booking_date
 $time_elapsed = time() - $booking_time;
 $twelve_hours = 12 * 60 * 60; // 43200 seconds

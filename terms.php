@@ -34,7 +34,7 @@
                         If you do not agree to these Terms, please do not use our Platform.
                     </p>
                     <p class="text-stone-600">
-                        Samaaroh is a wedding planning platform connecting families in Nadiad, Gujarat with verified wedding service providers 
+                        Samaaroh is a wedding planning platform connecting families with verified wedding service providers 
                         including bagiwala, party plots, caterers, photographers, and decorators.
                     </p>
                 </section>
@@ -202,7 +202,7 @@
                     <div class="bg-stone-50 rounded-xl p-4 mt-4">
                         <p class="text-stone-600"><strong>Email:</strong> legal@samaaroh.com</p>
                         <p class="text-stone-600"><strong>Phone:</strong> +91 98765 43210</p>
-                        <p class="text-stone-600"><strong>Address:</strong> Sangath Road, Nadiad, Gujarat 387002</p>
+                        <p class="text-stone-600"><strong>Address:</strong> Available upon request</p>
                     </div>
                 </section>
 

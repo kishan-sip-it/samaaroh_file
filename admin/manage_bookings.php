@@ -164,11 +164,14 @@ $bookings = $stmt->fetchAll();
                            class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-rose-500">
                 </div>
                 
-                <div class="flex items-end">
+                <div class="flex items-end gap-3">
                     <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg font-medium transition">
                         Filter
                     </button>
-                    <a href="<?= BASE_URL ?>admin/manage_bookings.php" class="text-stone-600 hover:text-rose-600 font-medium">
+                    <a href="<?= BASE_URL ?>admin/manage_bookings.php" class="inline-flex items-center px-4 py-2 bg-stone-600 hover:bg-stone-700 text-white font-medium rounded-lg transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                         Clear
                     </a>
                 </div>
@@ -235,7 +238,7 @@ $bookings = $stmt->fetchAll();
                                                ($booking['status'] === 'confirmed' ? 'bg-blue-100 text-blue-800' : 
                                                ($booking['status'] === 'paid' ? 'bg-purple-100 text-purple-800' : 
                                                ($booking['status'] === 'completed' ? 'bg-green-100 text-green-800' : 
-                                               ($booking['status'] === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')) ?>">
+                                               ($booking['status'] === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')))) ?>">
                                             <?= ucfirst($booking['status']) ?>
                                         </span>
                                     </td>

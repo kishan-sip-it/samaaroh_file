@@ -94,9 +94,9 @@ $service_provider = [
 
 // Customer details for reference
 $service_customer = [
-    'name' => $booking['customer_name'],
-    'email' => $booking['customer_email'],
-    'phone' => $booking['customer_phone'],
+    'name' => $booking['customer_name'] ?? 'N/A',
+    'email' => $booking['customer_email'] ?? 'N/A', 
+    'phone' => $booking['customer_phone'] ?? 'N/A',
     'address' => $booking['address'] ?? 'N/A'
 ];
 ?>
@@ -153,7 +153,7 @@ $service_customer = [
                         <p class="text-gray-600">Wedding Date: <?= date('d M, Y', strtotime($booking['event_date'])) ?></p>
                         <?php if ($invoice_type !== 'full'): ?>
                         <p class="text-sm text-<?= $invoice_color ?> font-medium">
-                            <?= $invoice_type === 'advance' ? '30% Advance Payment' : '70% Final Payment' ?>
+                            <?= $invoice_type === 'advance' ? '40% Advance Payment' : '60% Final Payment' ?>
                         </p>
                         <?php endif; ?>
                     </div>
@@ -162,7 +162,6 @@ $service_customer = [
                             <img src="<?= BASE_URL ?>assets/logo.svg" alt="Samaaroh" class="h-16 mx-auto">
                         </div>
                         <p class="text-sm text-gray-600">Samaaroh Wedding Planning</p>
-                        <p class="text-sm text-gray-600">Nadiad, Gujarat</p>
                         <p class="text-sm text-gray-600">support@samaaroh.com</p>
                     </div>
                 </div>
@@ -265,14 +264,14 @@ $service_customer = [
                         <?php if ($invoice_type === 'advance'): ?>
                         <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg border-2 border-blue-200">
                             <div>
-                                <p class="font-medium text-gray-800">Advance Payment (30%)</p>
+                                <p class="font-medium text-gray-800">Advance Payment (40%)</p>
                                 <p class="text-sm text-gray-600">Paid - Wedding date locked</p>
                             </div>
                             <p class="font-bold text-blue-700">₹<?= number_format($booking['advance_amount'], 2) ?></p>
                         </div>
                         <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                             <div>
-                                <p class="font-medium text-gray-800">Remaining Payment (70%)</p>
+                                <p class="font-medium text-gray-800">Remaining Payment (60%)</p>
                                 <p class="text-sm text-gray-600">Due before wedding</p>
                             </div>
                             <p class="font-bold text-gray-700">₹<?= number_format($booking['total_price'] - $booking['advance_amount'], 2) ?></p>
@@ -280,14 +279,14 @@ $service_customer = [
                         <?php elseif ($invoice_type === 'final'): ?>
                         <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                             <div>
-                                <p class="font-medium text-gray-800">Advance Payment (30%)</p>
+                                <p class="font-medium text-gray-800">Advance Payment (40%)</p>
                                 <p class="text-sm text-gray-600">Previously paid</p>
                             </div>
                             <p class="font-bold text-green-700">₹<?= number_format($booking['advance_amount'], 2) ?></p>
                         </div>
                         <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg border-2 border-green-200">
                             <div>
-                                <p class="font-medium text-gray-800">Final Payment (70%)</p>
+                                <p class="font-medium text-gray-800">Final Payment (60%)</p>
                                 <p class="text-sm text-gray-600">Paid - Booking completed</p>
                             </div>
                             <p class="font-bold text-green-700">₹<?= number_format($booking['final_payment_amount'] ?? ($booking['total_price'] - $booking['advance_amount']), 2) ?></p>
@@ -295,17 +294,17 @@ $service_customer = [
                         <?php else: ?>
                         <div class="flex justify-between items-center p-3 bg-amber-50 rounded-lg">
                             <div>
-                                <p class="font-medium text-gray-800">Advance Payment (30%)</p>
+                                <p class="font-medium text-gray-800">Advance Payment (40%)</p>
                                 <p class="text-sm text-gray-600">Due at booking confirmation</p>
                             </div>
-                            <p class="font-bold text-amber-700">₹<?= number_format(($booking['total_price'] * 30) / 100, 2) ?></p>
+                            <p class="font-bold text-amber-700">₹<?= number_format(($booking['total_price'] * 40) / 100, 2) ?></p>
                         </div>
                         <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
                             <div>
-                                <p class="font-medium text-gray-800">Remaining Payment (70%)</p>
+                                <p class="font-medium text-gray-800">Remaining Payment (60%)</p>
                                 <p class="text-sm text-gray-600">Due on wedding day</p>
                             </div>
-                            <p class="font-bold text-blue-700">₹<?= number_format(($booking['total_price'] * 70) / 100, 2) ?></p>
+                            <p class="font-bold text-blue-700">₹<?= number_format(($booking['total_price'] * 60) / 100, 2) ?></p>
                         </div>
                         <?php endif; ?>
                     </div>
@@ -318,12 +317,12 @@ $service_customer = [
                     <div class="bg-gray-50 p-4 rounded-lg space-y-2">
                         <?php if ($invoice_type === 'advance'): ?>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Advance Amount (30%):</span>
+                            <span class="text-gray-600">Advance Amount (40%):</span>
                             <span class="font-medium">₹<?= number_format($booking['advance_amount'], 2) ?></span>
                         </div>
                         <?php elseif ($invoice_type === 'final'): ?>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Final Amount (70%):</span>
+                            <span class="text-gray-600">Final Amount (60%):</span>
                             <span class="font-medium">₹<?= number_format($booking['final_payment_amount'] ?? ($booking['total_price'] - $booking['advance_amount']), 2) ?></span>
                         </div>
                         <?php else: ?>
@@ -367,8 +366,8 @@ $service_customer = [
                         <h3 class="font-semibold text-gray-800 mb-3">Payment Status</h3>
                         <div class="space-y-2">
                             <div class="flex items-center gap-2">
-                                <span class="w-3 h-3 rounded-full <?= $booking['advance_paid'] ? 'bg-green-500' : 'bg-yellow-500' ?>"></span>
-                                <span class="text-gray-700">Advance Payment (40%): <?= $booking['advance_paid'] ? 'Paid' : 'Pending' ?></span>
+                                <span class="w-3 h-3 rounded-full <?= ($booking['status'] === 'confirmed' || $booking['status'] === 'completed' || $booking['advance_paid']) ? 'bg-green-500' : 'bg-yellow-500' ?>"></span>
+                                <span class="text-gray-700">Advance Payment (40%): <?= ($booking['status'] === 'confirmed' || $booking['status'] === 'completed' || $booking['advance_paid']) ? 'Paid' : 'Pending' ?></span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="w-3 h-3 rounded-full <?= $booking['status'] === 'confirmed' ? 'bg-green-500' : 'bg-yellow-500' ?>"></span>

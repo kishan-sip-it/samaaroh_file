@@ -121,8 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <h3 class="font-bold text-stone-800 mb-1">Office Address</h3>
                             <p class="text-stone-600">
-                                Sangath Road, Near Mahudi Circle<br>
-                                Nadiad, Gujarat 387002<br>
+                                Available upon request<br>
                                 India
                             </p>
                         </div>

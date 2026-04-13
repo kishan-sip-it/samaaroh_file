@@ -168,7 +168,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                     <label class="block text-sm font-medium text-stone-700 mb-1">Service Title <span class="text-rose-500">*</span></label>
                     <input type="text" name="title" required 
                            class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                           placeholder="e.g., Traditional Das Buggy with Decorations"
+                           placeholder="e.g., Traditional Das Baggi with Decorations"
                            value="<?= $_POST['title'] ?? '' ?>">
                 </div>
 
@@ -177,8 +177,8 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                     <label class="block text-sm font-medium text-stone-700 mb-1">Description</label>
                     <textarea name="description" rows="4" 
                               class="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                              placeholder="Describe your service, inclusions, and what makes it special for Gujarati weddings..."><?= $_POST['description'] ?? '' ?></textarea>
-                    <p class="text-xs text-stone-400 mt-1">Max 500 characters. Highlight Nadiad-specific experience.</p>
+                              placeholder="Describe your service, inclusions, and what makes it special..."><?= $_POST['description'] ?? '' ?></textarea>
+                    <p class="text-xs text-stone-400 mt-1">Max 500 characters. Highlight your specific experience.</p>
                 </div>
 
                 <!-- Category & Tier -->
@@ -254,7 +254,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                                         <div class="text-center">
                                             <div class="text-3xl mb-2">🍽</div>
                                             <label class="cursor-pointer text-amber-600 font-medium hover:text-amber-700">
-                                                Use Gujarati Thali
+                                                Use Traditional Thali
                                             </label>
                                             <input type="checkbox" name="use_built_in_thali" value="1" class="hidden">
                                             <p class="text-xs text-stone-500 mt-1">Traditional thali template</p>
@@ -271,7 +271,7 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                             </div>
                             
                             <p class="text-xs text-stone-500">
-                                💡 Upload your existing menu or use our built-in Gujarati thali template. 
+                                💡 Upload your existing menu or use our built-in thali template. 
                                 The menu will be converted to an interactive checklist for customers.
                             </p>
                         </div>
@@ -350,10 +350,10 @@ body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                 <h2 class="heading text-2xl font-bold text-white ml-2">SAMAAROH</h2>
             </div>
             <p class="max-w-2xl mx-auto mb-6">
-                Nadiad's trusted wedding planning platform. Connecting families with verified vendors since 2026.
+Trusted wedding planning platform. Connecting families with verified vendors since 2026.
             </p>
             <p class="text-stone-500 text-sm">
-                &copy; 2026 Samaaroh. Made with ❤️ in Nadiad for Gujarati weddings.<br>
+                &copy; 2026 Samaaroh. Made with ❤️ for weddings.<br>
                 BCA Final Year Project by Kishan Marwadi
             </p>
         </div>

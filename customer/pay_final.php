@@ -24,7 +24,7 @@ $stmt = $pdo->prepare("
     FROM bookings b
     LEFT JOIN packages p ON b.package_id = p.id
     LEFT JOIN services s ON b.service_id = s.id
-    WHERE b.id = ? AND b.customer_id = ? AND b.status = 'paid'
+    WHERE b.id = ? AND b.customer_id = ? AND b.status IN ('confirmed', 'paid')
 ");
 $stmt->execute([$booking_id, $_SESSION['user_id']]);
 $booking = $stmt->fetch();
@@ -47,13 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // UPDATE BOOKING: Status = completed, final payment done
         $stmt = $pdo->prepare("
             UPDATE bookings 
-            SET status = 'completed', 
-                final_payment_amount = ?,
-                final_payment_date = NOW(),
-                total_paid = ?
+            SET status = 'completed'
             WHERE id = ? AND customer_id = ?
         ");
-        $result = $stmt->execute([$remaining_amount, $booking_price, $booking_id, $_SESSION['user_id']]);
+        $result = $stmt->execute([$booking_id, $_SESSION['user_id']]);
         
         if ($result) {
             setAlert("✅ Final payment of ₹" . number_format($remaining_amount, 0) . " received! Booking completed.", "success");
@@ -113,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span>₹<?= number_format($booking_price, 0) ?></span>
                 </div>
                 <div class="flex justify-between text-sm text-green-600 mb-2">
-                    <span>Advance Paid (30%):</span>
+                    <span>Advance Paid (40%):</span>
                     <span>-₹<?= number_format($advance_amount, 0) ?></span>
                 </div>
                 <div class="flex justify-between pt-3 border-t border-stone-200">

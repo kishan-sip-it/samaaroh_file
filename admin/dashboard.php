@@ -13,7 +13,7 @@ $stats = [
     'total_users' => $pdo->query("SELECT COUNT(*) as count FROM users")->fetchColumn(),
     'total_bookings' => $pdo->query("SELECT COUNT(*) as count FROM bookings")->fetchColumn(),
     'total_services' => $pdo->query("SELECT COUNT(*) as count FROM services")->fetchColumn(),
-    'total_revenue' => $pdo->query("SELECT SUM(total_price) as total FROM bookings WHERE status = 'completed'")->fetchColumn() ?: 0,
+    'verified_users' => $pdo->query("SELECT COUNT(*) as count FROM users WHERE is_verified = 1")->fetchColumn(),
     'pending_bookings' => $pdo->query("SELECT COUNT(*) as count FROM bookings WHERE status = 'pending'")->fetchColumn(),
     'confirmed_bookings' => $pdo->query("SELECT COUNT(*) as count FROM bookings WHERE status = 'confirmed'")->fetchColumn(),
     'completed_bookings' => $pdo->query("SELECT COUNT(*) as count FROM bookings WHERE status = 'completed'")->fetchColumn(),
@@ -60,13 +60,23 @@ $recent_users = $pdo->query("
     <?php displayAlert(); ?>
 
     <!-- Welcome Header -->
-    <div class="mb-8">
-        <h1 class="heading text-3xl font-bold text-stone-800">
-            Admin Dashboard 👑
-        </h1>
-        <p class="text-stone-600 mt-2">
-            Manage Samaaroh wedding platform - monitor bookings, users, and platform performance.
-        </p>
+    <div class="mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="heading text-3xl font-bold text-stone-800">
+                Admin Dashboard 👑
+            </h1>
+            <p class="text-stone-600 mt-2">
+                Manage Samaaroh wedding platform - monitor bookings, users, and platform performance.
+            </p>
+        </div>
+        <div class="flex gap-3">
+            <a href="<?= BASE_URL ?>admin/user_reports.php" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                User Reports
+            </a>
+        </div>
     </div>
 
     <!-- Statistics Cards -->
@@ -109,12 +119,12 @@ $recent_users = $pdo->query("
         
         <div class="bg-white rounded-xl border border-stone-200 p-6">
             <div class="flex items-center">
-                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                    <span class="text-blue-600 text-xl">💰</span>
+                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                    <span class="text-purple-600 text-xl">👥</span>
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-stone-800">₹<?= number_format($stats['total_revenue'], 0) ?></p>
-                    <p class="text-stone-600 text-sm">Total Revenue</p>
+                    <p class="text-2xl font-bold text-stone-800"><?= number_format($stats['verified_users']) ?></p>
+                    <p class="text-stone-600 text-sm">Verified Users</p>
                 </div>
             </div>
         </div>

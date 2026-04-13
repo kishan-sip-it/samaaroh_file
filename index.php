@@ -42,8 +42,8 @@ require_once 'config/config.php';
                     Your Dream Wedding <span class="text-amber-300">Perfectly Planned</span>
                 </h1>
                 <p class="text-xl text-stone-100 mb-10 max-w-2xl mx-auto drop-shadow-md">
-                    Book verified Bagiwalas, caterers, photographers & decorators in one place. 
-                    Nadiad's trusted wedding platform since 2026.
+                    Book verified vendors, caterers, photographers & decorators in one place. 
+                    Trusted wedding platform since 2026.
                 </p>
                 <div class="flex flex-wrap justify-center gap-4">
                     <a href="<?= BASE_URL ?>register.php" class="bg-stone-900 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-stone-800 shadow-xl transition transform hover:scale-105">
@@ -65,8 +65,8 @@ require_once 'config/config.php';
                         <span>Happy Weddings</span>
                     </div>
                     <div class="flex items-center">
-                        <span class="text-2xl font-bold text-amber-300 mr-2">Nadiad</span>
-                        <span>Based & Trusted</span>
+                        <span class="text-2xl font-bold text-amber-300 mr-2">Trusted</span>
+                        <span>& Reliable</span>
                     </div>
                 </div>
             </div>
@@ -83,7 +83,7 @@ require_once 'config/config.php';
     <!-- Services Section -->
     <section id="services" class="py-20 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="heading text-3xl md:text-4xl mb-4 text-stone-800">Trusted by Nadiad's Top Vendors</h2>
+            <h2 class="heading text-3xl md:text-4xl mb-4 text-stone-800">Trusted by Top Vendors</h2>
             <p class="text-stone-500 max-w-2xl mx-auto mb-16">
                 From Das Bagiwala to party plots — verified vendors who understand Every wedding traditions
             </p>
@@ -92,17 +92,17 @@ require_once 'config/config.php';
                 <div class="p-6 bg-stone-50 rounded-2xl hover:shadow-xl transition transform hover:scale-105">
                     <div class="text-5xl mb-4">🐎</div>
                     <h3 class="font-bold text-lg mb-2">Das Bagiwala</h3>
-                    <p class="text-stone-600 text-sm">Traditional buggy services with decorated Horses</p>
+                    <p class="text-stone-600 text-sm">Traditional baggi services with decorated Horses</p>
                 </div>
                 <div class="p-6 bg-stone-50 rounded-2xl hover:shadow-xl transition transform hover:scale-105">
                     <div class="text-5xl mb-4">🎪</div>
                     <h3 class="font-bold text-lg mb-2">Party Plots</h3>
-                    <p class="text-stone-600 text-sm">Sangath, Mahudi Road & central Nadiad venues</p>
+                    <p class="text-stone-600 text-sm">Various venues and locations</p>
                 </div>
                 <div class="p-6 bg-stone-50 rounded-2xl hover:shadow-xl transition transform hover:scale-105">
                     <div class="text-5xl mb-4">🍲</div>
                     <h3 class="font-bold text-lg mb-2">Catering</h3>
-                    <p class="text-stone-600 text-sm">Authentic Gujarati thali & multi-cuisine options</p>
+                    <p class="text-stone-600 text-sm">Authentic thali & multi-cuisine options</p>
                 </div>
                 <div class="p-6 bg-stone-50 rounded-2xl hover:shadow-xl transition transform hover:scale-105">
                     <div class="text-5xl mb-4">📸</div>
@@ -118,7 +118,7 @@ require_once 'config/config.php';
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="heading text-3xl md:text-4xl text-center mb-4 text-stone-800">How Samaaroh Works</h2>
             <p class="text-stone-500 text-center max-w-2xl mx-auto mb-16">
-                The stress-free way to plan your wedding — from Buggy's to party plot
+                The stress-free way to plan your wedding — from Baggi's to party plot
             </p>
             
             <div class="grid md:grid-cols-3 gap-10">
@@ -127,7 +127,7 @@ require_once 'config/config.php';
                     <div class="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-700 font-bold text-xl">1</div>
                     <h3 class="heading text-xl font-bold mb-3">Choose Services</h3>
                     <p class="text-stone-600">
-                        Select individual services ( buggy, catering, photography) 
+                        Select individual services ( baggi, catering, photography) 
                         OR pick a pre-built package (₹10L/15L/30L)
                     </p>
                 </div>
@@ -159,7 +159,7 @@ require_once 'config/config.php';
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="heading text-3xl md:text-4xl text-center mb-4 text-stone-800">Wedding Packages</h2>
             <p class="text-stone-500 text-center max-w-2xl mx-auto mb-16">
-                Pre-built packages curated for Nadiad weddings — including party plots, catering, decor & more
+                Pre-built packages curated for weddings — including party plots, catering, decor & more
             </p>
             
             <div class="grid md:grid-cols-3 gap-8">
@@ -168,7 +168,7 @@ require_once 'config/config.php';
                     <div class="p-8">
                         <span class="text-rose-600 font-bold uppercase tracking-widest text-sm">Standard</span>
                         <h3 class="heading text-3xl font-bold mt-2 text-stone-800">₹10 Lakhs</h3>
-                        <p class="mt-4 text-stone-600">Perfect for intimate 200-guest weddings in Nadiad</p>
+                        <p class="mt-4 text-stone-600">Perfect for intimate 200-guest weddings</p>
                         
                         <ul class="mt-8 space-y-3">
                             <li class="flex items-start">
@@ -185,7 +185,7 @@ require_once 'config/config.php';
                             </li>
                             <li class="flex items-start">
                                 <span class="text-rose-500 mr-2 mt-1">✓</span>
-                                <span>Das Bagiwala Buggy (2 hours)</span>
+                                <span>Das Bagiwala Baggi (2 hours)</span>
                             </li>
                             <li class="flex items-start">
                                 <span class="text-rose-500 mr-2 mt-1">✓</span>
@@ -212,7 +212,7 @@ require_once 'config/config.php';
                         <ul class="mt-8 space-y-3">
                             <li class="flex items-start">
                                 <span class="text-rose-500 mr-2 mt-1">✓</span>
-                                <span>Premium Party Plot (Central Nadiad)</span>
+                                <span>Premium Party Plot (Central Location)</span>
                             </li>
                             <li class="flex items-start">
                                 <span class="text-rose-500 mr-2 mt-1">✓</span>
@@ -306,7 +306,7 @@ require_once 'config/config.php';
             const testImg = new Image();
             testImg.src = '<?= BASE_URL ?>images/banner.jpg';
             testImg.onerror = () => {
-                alert('⚠️ IMAGE SETUP REQUIRED:\n\nCreate folder: C:\\wamp64\\www\\samaaroh_file\\images\\\n\nAdd these 5 images:\n- banner.jpg\n- image2.jpg\n- image3.jpg\n- image4.jpg\n- image5.jpg\n\n(Download from Unsplash: search "gujarati wedding")');
+                alert('⚠️ IMAGE SETUP REQUIRED:\n\nCreate folder: C:\\wamp64\\www\\samaaroh_file\\images\\\n\nAdd these 5 images:\n- banner.jpg\n- image2.jpg\n- image3.jpg\n- image4.jpg\n- image5.jpg\n\n(Download from Unsplash: search "wedding")');
             };
         }
     });

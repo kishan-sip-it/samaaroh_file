@@ -173,7 +173,10 @@ $stats = [
                 <div class="text-sm text-stone-500">
                     Showing <?= count($users) ?> user(s)
                 </div>
-                <a href="<?= BASE_URL ?>admin/manage_users.php" class="text-sm text-rose-600 hover:text-rose-700">
+                <a href="<?= BASE_URL ?>admin/manage_users.php" class="inline-flex items-center px-4 py-2 bg-stone-600 hover:bg-stone-700 text-white font-medium rounded-lg transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                     Clear filters
                 </a>
             </div>

@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
         
         // SUCCESS: Redirect to bookings page with confirmation
-        setAlert("✅ Booking request for '" . htmlspecialchars($package['name']) . "' sent! Provider has 12 hours to accept. You'll pay 30% advance after acceptance.", "success");
+        setAlert("✅ Booking request for '" . htmlspecialchars($package['name']) . "' sent! Provider has 12 hours to accept. You'll pay 40% advance after acceptance.", "success");
         header("Location: " . BASE_URL . "customer/my_bookings.php");
         exit();
         
@@ -88,8 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6 rounded-r-lg">
                 <p class="text-sm text-amber-800">
-                    💡 <strong>Important:</strong> After provider acceptance, you'll pay <span class="font-bold">30% advance</span> to confirm date. 
-                    Remaining 70% due after wedding completion. Date locked after advance payment.
+                    💡 <strong>Important:</strong> After provider acceptance, you'll pay <span class="font-bold">40% advance</span> to confirm date. 
+                    Remaining 60% due after wedding completion. Date locked after advance payment.
                 </p>
             </div>
             
@@ -118,10 +118,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="bg-blue-50 p-4 rounded-lg">
                     <h3 class="font-bold text-sm text-blue-800 mb-2">🔒 Date Protection Policy</h3>
                     <ul class="text-xs text-blue-700 space-y-1">
-                        <li>• Date locked immediately after 30% advance payment</li>
+                        <li>• Date locked immediately after 40% advance payment</li>
                         <li>• No changes allowed after advance payment (prevents scams)</li>
                         <li>• Full refund if provider cancels after acceptance</li>
-                        <li>• Remaining 70% due within 3 days after wedding</li>
+                        <li>• Remaining 60% due within 3 days after wedding</li>
                     </ul>
                 </div>
                 

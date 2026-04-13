@@ -182,7 +182,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <div class="text-6xl mb-4">🙏</div>
             <h2 class="heading text-2xl font-bold text-stone-800 mb-4">Thank You for Your Feedback!</h2>
             <p class="text-stone-600 max-w-2xl mx-auto">
-                Your honest feedback helps us serve Nadiad families better and improve our wedding planning platform. 
+                Your honest feedback helps us serve families better and improve our wedding planning platform. 
                 We read every submission and use it to make meaningful improvements.
             </p>
         </div>

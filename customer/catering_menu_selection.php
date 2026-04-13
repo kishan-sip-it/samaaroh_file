@@ -46,7 +46,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
                 $menu_data = json_decode($selected_service['menu_data'], true);
                 $menu_type = 'custom';
             } else {
-                // Default Gujarati Thali menu - Fixed Menu
+                // Default Thali menu - Fixed Menu
                 $menu_data = [
                     'categories' => [
                         'farsan' => [
@@ -58,7 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
                             ['name' => 'Roti/Phulka', 'price' => 15, 'description' => 'Freshly made wheat rotis'],
                             ['name' => 'Dal Tadka', 'price' => 120, 'description' => 'Tempered yellow lentils'],
                             ['name' => 'Mixed Vegetable Sabzi', 'price' => 150, 'description' => 'Seasonal mixed vegetables'],
-                            ['name' => 'Kadhi', 'price' => 100, 'description' => 'Gujarati kadhi with gram flour']
+                            ['name' => 'Kadhi', 'price' => 100, 'description' => 'Traditional kadhi with gram flour']
                         ],
                         'sweet_dish' => [
                             ['name' => 'Gulab Jamun', 'price' => 50, 'description' => 'Sweet milk dumplings in syrup'],
@@ -204,7 +204,7 @@ include '../includes/header.php';
                         <div>
                             <h3 class="font-bold text-lg text-stone-800 mb-2">Menu Type</h3>
                             <?php if ($menu_type === 'fixed'): ?>
-                                <p class="text-xl font-semibold text-stone-800">Fixed Gujarati Thali</p>
+                                <p class="text-xl font-semibold text-stone-800">Fixed Thali</p>
                                 <p class="text-sm text-amber-600 font-medium">This caterer only provides fixed dishes</p>
                             <?php else: ?>
                                 <p class="text-xl font-semibold text-stone-800">Custom Menu</p>
@@ -228,7 +228,7 @@ include '../includes/header.php';
                                 <div class="flex items-center gap-3 mb-4">
                                     <span class="text-2xl">🍽</span>
                                     <div>
-                                        <h3 class="font-bold text-lg text-amber-800">Fixed Gujarati Thali Menu</h3>
+                                        <h3 class="font-bold text-lg text-amber-800">Fixed Thali Menu</h3>
                                         <p class="text-amber-700 text-sm">This caterer only provides fixed dishes - all items included in the thali</p>
                                     </div>
                                 </div>

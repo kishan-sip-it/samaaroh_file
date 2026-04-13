@@ -128,8 +128,8 @@ $services = $pdo->query("
                 <div class="bg-white rounded-xl border border-stone-200 overflow-hidden hover:shadow-lg transition">
                     <!-- Banner Image -->
                     <div class="relative h-48 bg-stone-100">
-                        <?php if (!empty($service['image'])): ?>
-                            <img src="<?= UPLOADS_URL . 'services/' . htmlspecialchars($service['image']) ?>" 
+                        <?php if (!empty($service['image_path'])): ?>
+                            <img src="<?= UPLOADS_URL . htmlspecialchars($service['image_path']) ?>" 
                                  alt="<?= htmlspecialchars($service['title']) ?>"
                                  class="w-full h-full object-cover">
                         <?php else: ?>
