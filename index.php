@@ -193,7 +193,7 @@ require_once 'config/config.php';
                             </li>
                         </ul>
                         
-                        <a href="<?= BASE_URL ?>register.php" class="mt-10 block w-full bg-stone-900 text-white py-3 rounded-xl text-center font-semibold hover:bg-stone-800 transition">
+                        <a href="<?= BASE_URL ?>customer/book_package.php?package_id=1" class="mt-10 block w-full bg-stone-900 text-white py-3 rounded-xl text-center font-semibold hover:bg-stone-800 transition">
                             Book This Package
                         </a>
                     </div>
@@ -232,7 +232,7 @@ require_once 'config/config.php';
                             </li>
                         </ul>
                         
-                        <a href="<?= BASE_URL ?>register.php" class="mt-10 block w-full bg-rose-600 text-white py-3 rounded-xl text-center font-semibold hover:bg-rose-700 transition shadow-lg">
+                        <a href="<?= BASE_URL ?>customer/book_package.php?package_id=2" class="mt-10 block w-full bg-rose-600 text-white py-3 rounded-xl text-center font-semibold hover:bg-rose-700 transition shadow-lg">
                             Book This Package
                         </a>
                     </div>
@@ -268,7 +268,7 @@ require_once 'config/config.php';
                             </li>
                         </ul>
                         
-                        <a href="<?= BASE_URL ?>register.php" class="mt-10 block w-full bg-amber-400 text-stone-900 py-3 rounded-xl text-center font-semibold hover:bg-amber-300 transition">
+                        <a href="<?= BASE_URL ?>customer/book_package.php?package_id=3" class="mt-10 block w-full bg-amber-400 text-stone-900 py-3 rounded-xl text-center font-semibold hover:bg-amber-300 transition">
                             Book This Package
                         </a>
                     </div>

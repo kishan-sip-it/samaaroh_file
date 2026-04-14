@@ -361,10 +361,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <!-- Gallery Section -->
-        <?php if (!empty($gallery_images)): ?>
         <div class="bg-white rounded-2xl border border-stone-200 p-8">
             <h2 class="heading text-2xl font-bold text-stone-800 mb-6">Service Gallery</h2>
             
+            <?php if (!empty($gallery_images)): ?>
             <div class="gallery-grid">
                 <?php foreach ($gallery_images as $image): ?>
                 <div class="gallery-item rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition"
@@ -375,8 +375,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <?php endforeach; ?>
             </div>
+            <?php else: ?>
+            <!-- Royal Empty Gallery Message -->
+            <div class="text-center py-12">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-amber-100 to-rose-100 rounded-full mb-6">
+                    <span class="text-3xl">👑</span>
+                </div>
+                <h3 class="heading text-xl font-bold text-stone-800 mb-3">No Gallery Images Yet</h3>
+                <p class="text-stone-600 max-w-md mx-auto mb-6">
+                    This provider hasn't uploaded any event images yet. Check back soon to see beautiful wedding moments from their recent events.
+                </p>
+                <div class="flex items-center justify-center space-x-2 text-amber-600">
+                    <span class="text-sm">✨</span>
+                    <span class="text-sm font-medium">Gallery Coming Soon</span>
+                    <span class="text-sm">✨</span>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
-        <?php endif; ?>
     </main>
 
     <!-- Lightbox -->
@@ -424,7 +440,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         // Real-time calculation for dish selection
-        <?php if ($service['category'] === 'catering' && (empty($service['is_fixed_thali']) || $service['is_fixed_thali'] != 1): ?>
+        <?php if ($service['category'] === 'catering' && (empty($service['is_fixed_thali']) || $service['is_fixed_thali'] != 1)): ?>
         document.addEventListener('DOMContentLoaded', function() {
             const guestCountInput = document.getElementById('guestCount');
             const selectedDishesCount = document.getElementById('selectedDishesCount');

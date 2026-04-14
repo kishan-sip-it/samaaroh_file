@@ -224,7 +224,7 @@ $bookings = $stmt->fetchAll();
                 <div class="text-6xl mb-4">🎪</div>
                 <h3 class="font-bold text-xl text-stone-800 mb-2">No bookings yet</h3>
                 <p class="text-stone-600 mb-6">Start exploring wedding services and book your dream wedding!</p>
-                <a href="<?= BASE_URL ?>services.php" 
+                <a href="<?= BASE_URL ?>customer/dashboard.php" 
                     class="inline-block bg-rose-600 text-white px-6 py-3 rounded-xl font-semibold transition">
                     Browse Services
                 </a>

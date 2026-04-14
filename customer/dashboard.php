@@ -21,13 +21,60 @@ $bookings = $pdo->prepare("
 $bookings->execute([$_SESSION['user_id']]);
 $bookings_list = $bookings->fetchAll();
 
-// Fetch available services
-$services = $pdo->query("
-    SELECT s.*, u.name as provider_name, u.phone as provider_phone
+// Filter by category
+$category = $_GET['category'] ?? 'all';
+$search = $_GET['search'] ?? '';
+
+if ($category !== 'all' || !empty($search)) {
+    $where_conditions = ["s.is_available = 1", "u.is_verified = 1"];
+    $params = [];
+    
+    if ($category !== 'all') {
+        $where_conditions[] = "s.category = ?";
+        $params[] = $category;
+    }
+    
+    if (!empty($search)) {
+        $where_conditions[] = "(s.title LIKE ? OR s.description LIKE ? OR u.name LIKE ?)";
+        $search_term = "%$search%";
+        $params[] = $search_term;
+        $params[] = $search_term;
+        $params[] = $search_term;
+    }
+    
+    $where_clause = implode(" AND ", $where_conditions);
+    $services = $pdo->query("
+        SELECT s.*, u.name as provider_name, u.phone as provider_phone,
+               COUNT(DISTINCT b.id) as booking_count
+        FROM services s
+        LEFT JOIN users u ON s.provider_id = u.id
+        LEFT JOIN bookings b ON s.id = b.service_id
+        WHERE $where_clause
+        GROUP BY s.id
+        ORDER BY s.id DESC
+    ")->fetchAll();
+} else {
+    // Fetch available services
+    $services = $pdo->query("
+        SELECT s.*, u.name as provider_name, u.phone as provider_phone,
+               COUNT(DISTINCT b.id) as booking_count
+        FROM services s
+        JOIN users u ON s.provider_id = u.id
+        LEFT JOIN bookings b ON s.id = b.service_id
+        WHERE s.is_available = 1 AND u.is_verified = 1
+        GROUP BY s.id
+        ORDER BY s.id DESC
+    ")->fetchAll();
+}
+
+// Get categories
+$categories = $pdo->query("
+    SELECT DISTINCT category, COUNT(*) as count
     FROM services s
     JOIN users u ON s.provider_id = u.id
     WHERE s.is_available = 1 AND u.is_verified = 1
-    ORDER BY s.id DESC
+    GROUP BY category
+    ORDER BY count DESC
 ")->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -54,7 +101,7 @@ $services = $pdo->query("
     <!-- Welcome Section -->
     <div class="mb-8">
         <h1 class="heading text-3xl font-bold text-stone-800">
-            Welcome back, <?= htmlspecialchars($_SESSION['name']) ?>! 👰
+            Welcome back, <?= htmlspecialchars($_SESSION['name']) ?>! 
         </h1>
         <p class="text-stone-600 mt-2">
             Manage your wedding bookings and discover new services for your special day.
@@ -123,9 +170,56 @@ $services = $pdo->query("
     <div>
         <h2 class="heading text-2xl font-bold text-stone-800 mb-6">Available Services</h2>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <?php foreach (array_slice($services, 0, 6) as $service): ?>
-                <div class="bg-white rounded-xl border border-stone-200 overflow-hidden hover:shadow-lg transition">
+        <!-- Search and Filters -->
+        <div class="bg-white rounded-2xl border border-stone-200 p-6 mb-8">
+            <form method="GET" class="space-y-4">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1">
+                        <input type="text" name="search" 
+                            class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                            placeholder="Search services, vendors..." value="<?= htmlspecialchars($search) ?>">
+                    </div>
+                    <div>
+                        <select name="category" 
+                            class="px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent">
+                            <option value="all" <?= $category === 'all' ? 'selected' : '' ?>>All Categories</option>
+                            <?php foreach ($categories as $cat): ?>
+                                <option value="<?= $cat['category'] ?>" <?= $category === $cat['category'] ? 'selected' : '' ?>>
+                                    <?= ucfirst($cat['category']) ?> (<?= $cat['count'] ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <button type="submit" 
+                        class="bg-rose-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-rose-700 transition">
+                        Search
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Results Count -->
+        <div class="mb-6">
+            <p class="text-stone-600">
+                Found <span class="font-bold text-stone-800"><?= count($services) ?></span> services
+                <?= $category !== 'all' ? "in " . ucfirst($category) : "" ?>
+                <?= !empty($search) ? "matching '" . htmlspecialchars($search) . "'" : "" ?>
+            </p>
+        </div>
+        
+        <?php if (empty($services)): ?>
+            <div class="bg-white rounded-2xl border border-stone-200 p-12 text-center">
+                <div class="text-6xl mb-4">????</div>
+                <h3 class="heading text-2xl font-bold text-stone-800 mb-2">No services found</h3>
+                <p class="text-stone-600 mb-6">Try adjusting your search criteria or browse all available services.</p>
+                <a href="?category=all" class="inline-block bg-rose-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-rose-700 transition">
+                    View All Services
+                </a>
+            </div>
+        <?php else: ?>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <?php foreach (array_slice($services, 0, 6) as $index => $service): ?>
+                <div class="bg-white rounded-xl border border-stone-200 overflow-hidden hover:shadow-lg transition <?= $service['category'] === 'photography' ? 'order-first' : '' ?>">
                     <!-- Banner Image -->
                     <div class="relative h-48 bg-stone-100">
                         <?php if (!empty($service['image_path'])): ?>
@@ -209,14 +303,10 @@ $services = $pdo->query("
                     </form>
                 </div>
             <?php endforeach; ?>
-        </div>
+            </div>
+        <?php endif; ?>
         
-        <div class="text-center mt-8">
-            <a href="<?= BASE_URL ?>services.php" class="inline-block bg-stone-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-stone-800 transition">
-                View All Services
-            </a>
         </div>
-    </div>
     </section>
 
     <!-- Recent Bookings Section -->
