@@ -1,16 +1,12 @@
 #!/bin/sh
 set -eu
 
-# ---------------------------------------------------------
-# Optional one-time legacy MySQL -> PostgreSQL migration.
-# Set RUN_LEGACY_MYSQL_MIGRATION=1 in Render only while
-# DATABASE_URL and LEGACY_MYSQL_* credentials are configured.
-# The migration script records completion in PostgreSQL and
-# safely skips itself on subsequent container restarts.
-# ---------------------------------------------------------
-if [ "${RUN_LEGACY_MYSQL_MIGRATION:-0}" = "1" ]; then
-    echo "Starting Samaaroh legacy MySQL -> PostgreSQL migration..."
-    php /var/www/html/tools/migrate_mysql_to_postgres.php
+# Keep the legacy PHP application compatible with the PostgreSQL schema.
+# The old MySQL database represented boolean-like values as TINYINT(1),
+# and the application consistently reads/writes them as 0/1.
+if [ -n "${DATABASE_URL:-}" ]; then
+    echo "Checking PostgreSQL compatibility..."
+    php /var/www/html/tools/ensure_postgres_legacy_compat.php
 fi
 
 # Render expects a public HTTP listener.
