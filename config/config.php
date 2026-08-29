@@ -22,7 +22,26 @@ try {
 }
 
 // Base URL Configuration
-define('BASE_URL', '/samaaroh_file/');
+// Local WAMP installs commonly serve the project from /samaaroh_file/,
+// while production hosting serves it from the domain root (/).
+$httpHost = $_SERVER['HTTP_HOST'] ?? '';
+$hostOnly = strtolower(preg_replace('/:\\d+$/', '', $httpHost));
+$localHosts = ['localhost', '127.0.0.1', '::1'];
+$isLocal = in_array($hostOnly, $localHosts, true);
+
+$basePath = '/';
+
+if ($isLocal) {
+    $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
+
+    // Keep WAMP compatibility when the project is served as:
+    // http://localhost/samaaroh_file/
+    if (preg_match('#^/samaaroh_file(?:/|$)#i', $requestPath)) {
+        $basePath = '/samaaroh_file/';
+    }
+}
+
+define('BASE_URL', $basePath);
 define('UPLOADS_URL', BASE_URL . 'uploads/');
 define('UPLOADS_DIR', __DIR__ . '/../uploads/');
 
