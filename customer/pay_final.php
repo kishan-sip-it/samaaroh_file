@@ -71,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/svg+xml" href="<?= defined('BASE_URL') ? BASE_URL : '/' ?>favicon.svg" />
     <meta charset="UTF-8">
     <title>Final Payment | Samaaroh</title>
     <script src="https://cdn.tailwindcss.com"></script>

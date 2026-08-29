@@ -45,6 +45,7 @@ if (isset($_SESSION['show_donation_message']) && $_SESSION['show_donation_messag
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/svg+xml" href="<?= defined('BASE_URL') ? BASE_URL : '/' ?>favicon.svg" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Bookings | Samaaroh</title>
