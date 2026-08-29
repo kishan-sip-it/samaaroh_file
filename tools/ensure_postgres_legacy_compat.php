@@ -3,14 +3,16 @@
 declare(strict_types=1);
 
 /**
- * Keep the existing MySQL/PHP application compatible with PostgreSQL.
+ * PostgreSQL compatibility bootstrap for the legacy Samaaroh PHP codebase.
  *
- * The original MySQL schema used TINYINT(1) for boolean-like fields and
- * the PHP application already reads/writes those values as 0/1. Supabase
- * was initially created with native PostgreSQL BOOLEAN columns, which makes
- * queries such as `WHERE is_verified = 1` fail. This idempotent bootstrap
- * converts only the known legacy boolean-like columns from BOOLEAN to INTEGER
- * and restores their 0/1 defaults.
+ * The original MySQL schema represented boolean-like values as TINYINT(1),
+ * and the PHP application uses the corresponding 0/1 values in SQL. When the
+ * schema was recreated in PostgreSQL, those columns could become BOOLEAN,
+ * making legacy expressions such as `is_verified = 1` invalid in PostgreSQL.
+ *
+ * On Render we normalize every BOOLEAN column in the public schema to INTEGER
+ * with 0/1 semantics. This is deliberately idempotent and schema-driven so a
+ * future table/column cannot reintroduce the same class of error.
  */
 
 $databaseUrl = trim((string) getenv('DATABASE_URL'));
@@ -49,42 +51,54 @@ $pdo = new PDO($dsn, $user, $pass, [
     PDO::ATTR_EMULATE_PREPARES => false,
 ]);
 
-$columns = [
-    ['users', 'is_verified', 1],
-    ['services', 'is_available', 1],
-    ['bookings', 'advance_paid', 0],
-    ['notifications', 'is_read', 0],
-    ['reviews', 'is_verified_purchase', 0],
-];
+$booleanColumns = $pdo->query(
+    "SELECT table_name, column_name, column_default\n" .
+    "FROM information_schema.columns\n" .
+    "WHERE table_schema = 'public'\n" .
+    "  AND data_type = 'boolean'\n" .
+    "ORDER BY table_name, ordinal_position"
+)->fetchAll();
 
-foreach ($columns as [$table, $column, $default]) {
-    $check = $pdo->prepare(
-        'SELECT data_type FROM information_schema.columns '
-        . 'WHERE table_schema = \'public\' AND table_name = ? AND column_name = ?'
+$converted = 0;
+
+foreach ($booleanColumns as $column) {
+    $table = (string) $column['table_name'];
+    $name = (string) $column['column_name'];
+    $default = $column['column_default'];
+
+    $qTable = '"' . str_replace('"', '""', $table) . '"';
+    $qColumn = '"' . str_replace('"', '""', $name) . '"';
+
+    // Drop the BOOLEAN default first so PostgreSQL can change the data type.
+    $pdo->exec("ALTER TABLE {$qTable} ALTER COLUMN {$qColumn} DROP DEFAULT");
+
+    // Preserve the existing truth values as legacy-compatible 0/1 integers.
+    $pdo->exec(
+        "ALTER TABLE {$qTable} ALTER COLUMN {$qColumn} TYPE INTEGER " .
+        "USING CASE WHEN {$qColumn} IS TRUE THEN 1 ELSE 0 END"
     );
-    $check->execute([$table, $column]);
-    $type = $check->fetchColumn();
 
-    if ($type === false) {
-        continue;
-    }
-
-    if (strtolower((string) $type) === 'boolean') {
-        $qTable = '"' . str_replace('"', '""', $table) . '"';
-        $qColumn = '"' . str_replace('"', '""', $column) . '"';
-
-        // Drop BOOLEAN default before converting the column to INTEGER.
-        $pdo->exec("ALTER TABLE {$qTable} ALTER COLUMN {$qColumn} DROP DEFAULT");
+    // Preserve the common TRUE/FALSE default where PostgreSQL exposed one.
+    if ($default !== null) {
+        $defaultValue = preg_match('/TRUE/i', (string) $default) ? '1' : '0';
         $pdo->exec(
-            "ALTER TABLE {$qTable} ALTER COLUMN {$qColumn} TYPE INTEGER "
-            . "USING CASE WHEN {$qColumn} IS TRUE THEN 1 ELSE 0 END"
+            "ALTER TABLE {$qTable} ALTER COLUMN {$qColumn} SET DEFAULT {$defaultValue}"
         );
-        $pdo->exec("ALTER TABLE {$qTable} ALTER COLUMN {$qColumn} SET DEFAULT {$default}");
-
-        echo "Converted public.{$table}.{$column} BOOLEAN -> INTEGER.\n";
     }
+
+    $converted++;
+    echo "Converted public.{$table}.{$name} BOOLEAN -> INTEGER.\n";
 }
 
-// Mark the compatibility check as complete without creating a permanent
-// application table. The operation is intentionally idempotent.
-echo "PostgreSQL legacy-boolean compatibility check complete.\n";
+$remaining = $pdo->query(
+    "SELECT COUNT(*) FROM information_schema.columns " .
+    "WHERE table_schema = 'public' AND data_type = 'boolean'"
+)->fetchColumn();
+
+if ((int) $remaining !== 0) {
+    throw new RuntimeException(
+        "PostgreSQL compatibility check failed: {$remaining} BOOLEAN column(s) remain."
+    );
+}
+
+echo "PostgreSQL legacy-boolean compatibility check complete. {$converted} column(s) normalized.\n";
