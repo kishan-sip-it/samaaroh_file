@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: samaaroh
+    runtime: docker
+    plan: free
+    region: singapore
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: DATABASE_URL
+        sync: false
