@@ -1,0 +1,10 @@
+.git
+.github
+.gitignore
+README.md
+samaaroh_db_credentials.txt
+*.sql
+*.sql.gz
+*.zip
+.DS_Store
+Thumbs.db
