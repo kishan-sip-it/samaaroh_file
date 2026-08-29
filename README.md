@@ -4,13 +4,17 @@
 
 ### Premium Wedding Planning & Vendor Management Platform
 
-A PHP + MySQL web application for planning weddings, discovering services, managing vendors, handling bookings, and supporting customer/provider workflows through a server-rendered interface.
+A PHP + PostgreSQL web application for planning weddings, discovering services, managing vendors, handling bookings, and supporting customer/provider workflows through a server-rendered interface.
 
 [![PHP](https://img.shields.io/badge/PHP-Server--Side-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/)
-[![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Backend-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Render](https://img.shields.io/badge/Render-Deployed-46E3B7?style=for-the-badge&logo=render&logoColor=111111)](https://render.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-UI-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![JavaScript](https://img.shields.io/badge/JavaScript-Interactions-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Repository](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/kishan-sip-it/samaaroh_file)
+
+### 🚀 [Live Demo — Samaaroh](https://samaaroh-uron.onrender.com/)
 
 </div>
 
@@ -47,9 +51,11 @@ The landing page presents wedding services such as vendors, caterers, photograph
 
 | Layer | Technology |
 |---|---|
-| Server | PHP |
-| Database | MySQL |
-| Database access | PDO |
+| Server | PHP 8.x |
+| Database | PostgreSQL |
+| Database platform | Supabase |
+| Database access | PDO (PostgreSQL) |
+| Hosting | Render |
 | Styling | Tailwind CSS + custom CSS |
 | Client-side interaction | JavaScript |
 | Typography | Playfair Display + Inter |
@@ -68,6 +74,8 @@ samaaroh_file/
 ├── includes/              # Shared PHP components such as navigation
 ├── assets/                # CSS and frontend assets
 ├── images/                # Application imagery
+├── tools/                 # Database/runtime maintenance utilities
+├── docker/                # Render runtime startup configuration
 ├── index.php              # Main landing page
 ├── about.php              # About page
 ├── contact.php            # Contact workflow
@@ -86,7 +94,10 @@ samaaroh_file/
 Browser
    │
    ▼
-PHP page / workflow
+Render Web Service
+   │
+   ▼
+PHP application
    │
    ├── Shared includes
    ├── Session state
@@ -94,16 +105,16 @@ PHP page / workflow
    └── PDO queries
           │
           ▼
-       MySQL
+   Supabase PostgreSQL
 ```
 
-The application uses PHP sessions for user state and PDO for MySQL access. Shared configuration and reusable UI pieces are kept under `config/` and `includes/`.
+The application uses PHP sessions for user state and PDO for PostgreSQL access. Shared configuration and reusable UI pieces are kept under `config/` and `includes/`.
 
 ---
 
 ## 🗄️ Data Layer
 
-The application is backed by **MySQL**. The database configuration is centralized in `config/config.php`, and the application connects through PHP's PDO interface.
+The production application uses **PostgreSQL hosted by Supabase**. The runtime reads its connection from the Render `DATABASE_URL` environment variable, while the local WAMP setup can continue using the project's MySQL-compatible development configuration.
 
 > **Security:** configure database credentials through your local/server environment rather than committing real passwords to Git. Never copy production credentials into this README.
 
@@ -114,7 +125,7 @@ The application is backed by **MySQL**. The database configuration is centralize
 ### Requirements
 
 - PHP 8.x recommended
-- MySQL / MariaDB
+- MySQL / MariaDB for the existing WAMP development setup
 - Apache, XAMPP, WAMP, or another PHP-capable web server
 - A browser
 
@@ -125,21 +136,11 @@ git clone https://github.com/kishan-sip-it/samaaroh_file.git
 cd samaaroh_file
 ```
 
-### 2. Create the database
+### 2. Configure the local database
 
-Create a MySQL database matching the database name configured for your local installation, then import the project's SQL/schema data if supplied with your working copy.
+Create the local MySQL database matching your local installation and configure the credentials through the local environment/configuration.
 
-### 3. Configure the connection
-
-Update `config/config.php` for your local MySQL host, database, username, and password.
-
-Do **not** commit real credentials.
-
-### 4. Configure the base URL
-
-The project currently uses a configurable `BASE_URL` constant. If you serve the project from a different path, update that value to match your local web-server path.
-
-### 5. Start the server
+### 3. Start the application
 
 For a simple PHP development server, from the project directory:
 
@@ -151,6 +152,16 @@ If your setup depends on Apache/XAMPP routing, place the project in the appropri
 
 ---
 
+## ☁️ Production Deployment
+
+Samaaroh is deployed on **Render** with **Supabase PostgreSQL**:
+
+**Live:** https://samaaroh-uron.onrender.com/
+
+The repository is connected to the Render web service so pushes to `main` trigger a fresh deployment.
+
+---
+
 ## 🎨 UI Direction
 
 The visual design combines:
@@ -158,7 +169,7 @@ The visual design combines:
 - **Playfair Display** for premium editorial-style headings
 - **Inter** for readable interface text
 - Warm stone/cream surfaces
-- Amber accent colors
+- Amber/rose accent colors
 - Large photographic hero sections
 - Responsive Tailwind utility classes
 - Animated/interactive presentation elements
@@ -176,7 +187,7 @@ Before deploying this application publicly:
 - Review file-upload handling and permissions.
 - Use secure session/cookie settings.
 - Disable verbose database errors in production.
-- Use least-privilege MySQL credentials.
+- Use least-privilege database credentials.
 
 ---
 
@@ -184,11 +195,14 @@ Before deploying this application publicly:
 
 This repository contains the working Samaaroh application source, including customer, provider, authentication, booking, feedback, and administrative areas.
 
-For the exact implementation, browse the source directories and PHP entry points in the repository.
+The current production stack is **PHP + Render + Supabase PostgreSQL**.
 
 ---
 
 ## 🔗 Links
+
+**Live application:**
+https://samaaroh-uron.onrender.com/
 
 **Source code:**
 https://github.com/kishan-sip-it/samaaroh_file
