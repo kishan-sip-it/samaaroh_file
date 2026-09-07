@@ -150,6 +150,32 @@ foreach ($serviceColumnDefinitions as $column => $definition) {
 }
 
 // ============================================================
+// PERSISTENT SERVICE IMAGE STORAGE
+// ============================================================
+// Render containers have ephemeral local storage. Keep a base64 copy in the
+// PostgreSQL services row so images remain available after every redeploy.
+$serviceImageColumns = [
+    'image_data' => 'TEXT',
+    'image_mime_type' => 'VARCHAR(100)',
+];
+
+foreach ($serviceImageColumns as $column => $definition) {
+    $check = $pdo->prepare(
+        'SELECT 1 FROM information_schema.columns '
+        . 'WHERE table_schema = \'public\' AND table_name = \'services\' AND column_name = ?'
+    );
+    $check->execute([$column]);
+
+    if ($check->fetchColumn() === false) {
+        $pdo->exec(
+            'ALTER TABLE ' . qident('services')
+            . ' ADD COLUMN ' . qident($column) . ' ' . $definition
+        );
+        echo "Added public.services.{$column}.\n";
+    }
+}
+
+// ============================================================
 // LEGACY BOOLEAN COMPATIBILITY
 // ============================================================
 $booleanColumns = $pdo->query(
