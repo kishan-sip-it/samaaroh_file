@@ -18,89 +18,226 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-
-      - name: Repair PostgreSQL compatibility
+      - name: Repair known PostgreSQL incompatibilities
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re
 
           root = Path('.')
           changed = []
 
-          def patch(path, replacements):
+          def replace(path, old, new):
               p = root / path
               text = p.read_text(encoding='utf-8')
-              updated = text
-              for old, new in replacements:
-                  updated = updated.replace(old, new)
+              if old not in text:
+                  return
+              updated = text.replace(old, new)
               if updated != text:
                   p.write_text(updated, encoding='utf-8')
-                  changed.append(path)
+                  if path not in changed:
+                      changed.append(path)
 
-          patch('customer/profile.php', [
-              ('''    SELECT u.*, COUNT(b.id) as booking_count, COALESCE(SUM(b.total_price), 0) as total_spent\n    FROM users u\n    LEFT JOIN bookings b ON u.id = b.customer_id\n    WHERE u.id = ?\n''',
-               '''    SELECT u.*,\n           (SELECT COUNT(*) FROM bookings b1 WHERE b1.customer_id = u.id) as booking_count,\n           (SELECT COALESCE(SUM(b2.total_price), 0) FROM bookings b2 WHERE b2.customer_id = u.id) as total_spent\n    FROM users u\n    WHERE u.id = ?\n''')
-          ])
+          # Customer profile: replace aggregate + SELECT u.* query with scalar subqueries.
+          replace(
+              'customer/profile.php',
+              '''    SELECT u.*, COUNT(b.id) as booking_count, COALESCE(SUM(b.total_price), 0) as total_spent\n    FROM users u\n    LEFT JOIN bookings b ON u.id = b.customer_id\n    WHERE u.id = ?\n''',
+              '''    SELECT u.*,\n           (SELECT COUNT(*) FROM bookings b1 WHERE b1.customer_id = u.id) as booking_count,\n           (SELECT COALESCE(SUM(b2.total_price), 0) FROM bookings b2 WHERE b2.customer_id = u.id) as total_spent\n    FROM users u\n    WHERE u.id = ?\n'''
+          )
 
-          patch('provider/profile.php', [
-              ('''    SELECT u.*, COUNT(s.id) as service_count\n    FROM users u\n    LEFT JOIN services s ON u.id = s.provider_id\n    WHERE u.id = ?\n''',
-               '''    SELECT u.*,\n           (SELECT COUNT(*) FROM services s1 WHERE s1.provider_id = u.id) as service_count\n    FROM users u\n    WHERE u.id = ?\n''')
-          ])
+          # Provider profile: same pattern.
+          replace(
+              'provider/profile.php',
+              '''    SELECT u.*, COUNT(s.id) as service_count\n    FROM users u\n    LEFT JOIN services s ON u.id = s.provider_id\n    WHERE u.id = ?\n''',
+              '''    SELECT u.*,\n           (SELECT COUNT(*) FROM services s1 WHERE s1.provider_id = u.id) as service_count\n    FROM users u\n    WHERE u.id = ?\n'''
+          )
 
-          patch('admin/manage_users.php', [
-              ('''    SELECT u.*, \n           COUNT(DISTINCT b.id) as total_bookings,\n           COUNT(DISTINCT CASE WHEN b.status = 'confirmed' THEN b.id END) as confirmed_bookings,\n           MAX(b.booking_date) as last_booking_date\n    FROM users u\n    LEFT JOIN bookings b ON u.id = b.customer_id\n    $where_clause\n    GROUP BY u.id\n    ORDER BY u.created_at DESC\n''',
-               '''    SELECT u.*,\n           (SELECT COUNT(*) FROM bookings b1 WHERE b1.customer_id = u.id) as total_bookings,\n           (SELECT COUNT(*) FROM bookings b2 WHERE b2.customer_id = u.id AND b2.status = 'confirmed') as confirmed_bookings,\n           (SELECT MAX(b3.booking_date) FROM bookings b3 WHERE b3.customer_id = u.id) as last_booking_date\n    FROM users u\n    $where_clause\n    ORDER BY u.created_at DESC\n'''),
-              ("UPDATE users SET CAST(is_verified AS TEXT) IN ('1','t','true') WHERE id = ?", "UPDATE users SET is_verified = TRUE WHERE id = ?"),
-              ("UPDATE users SET CAST(is_verified AS TEXT) IN ('0','f','false') WHERE id = ?", "UPDATE users SET is_verified = FALSE WHERE id = ?"),
-              ('''if ($verification !== 'all') {\n    $where_conditions[] = "u.is_verified = ?";\n    $params[] = $verification === 'verified' ? 1 : 0;\n}\n''',
-               '''if ($verification !== 'all') {\n    $where_conditions[] = $verification === 'verified' ? "u.is_verified IS TRUE" : "u.is_verified IS FALSE";\n}\n''')
-          ])
+          # Admin user list: remove GROUP BY on SELECT u.* and calculate booking aggregates per user.
+          replace(
+              'admin/manage_users.php',
+              '''    SELECT u.*, \n           COUNT(DISTINCT b.id) as total_bookings,\n           COUNT(DISTINCT CASE WHEN b.status = 'confirmed' THEN b.id END) as confirmed_bookings,\n           MAX(b.booking_date) as last_booking_date\n    FROM users u\n    LEFT JOIN bookings b ON u.id = b.customer_id\n    $where_clause\n    GROUP BY u.id\n    ORDER BY u.created_at DESC\n''',
+              '''    SELECT u.*,\n           (SELECT COUNT(*) FROM bookings b1 WHERE b1.customer_id = u.id) as total_bookings,\n           (SELECT COUNT(*) FROM bookings b2 WHERE b2.customer_id = u.id AND b2.status = 'confirmed') as confirmed_bookings,\n           (SELECT MAX(b3.booking_date) FROM bookings b3 WHERE b3.customer_id = u.id) as last_booking_date\n    FROM users u\n    $where_clause\n    ORDER BY u.created_at DESC\n'''
+          )
 
-          patch('admin/user_reports.php', [
-              ('''        SELECT u.id, u.name, u.email, u.phone, u.role, u.is_verified, u.created_at,\n               COUNT(DISTINCT b.id) as total_bookings,\n               COUNT(DISTINCT CASE WHEN b.status = 'confirmed' THEN b.id END) as confirmed_bookings,\n               COALESCE(SUM(CASE WHEN b.status = 'confirmed' THEN b.total_price END), 0) as total_revenue\n        FROM users u\n        LEFT JOIN bookings b ON u.id = b.customer_id\n        $where_clause\n        GROUP BY u.id\n        ORDER BY u.created_at DESC\n''',
-               '''        SELECT u.id, u.name, u.email, u.phone, u.role, u.is_verified, u.created_at,\n               (SELECT COUNT(*) FROM bookings b1 WHERE b1.customer_id = u.id) as total_bookings,\n               (SELECT COUNT(*) FROM bookings b2 WHERE b2.customer_id = u.id AND b2.status = 'confirmed') as confirmed_bookings,\n               (SELECT COALESCE(SUM(CASE WHEN b3.status = 'confirmed' THEN b3.total_price END), 0) FROM bookings b3 WHERE b3.customer_id = u.id) as total_revenue\n        FROM users u\n        $where_clause\n        ORDER BY u.created_at DESC\n''')
-          ])
+          # Repair the earlier bad boolean SET rewrite.
+          replace(
+              'admin/manage_users.php',
+              "UPDATE users SET CAST(is_verified AS TEXT) IN ('1','t','true') WHERE id = ?",
+              'UPDATE users SET is_verified = TRUE WHERE id = ?'
+          )
+          replace(
+              'admin/manage_users.php',
+              "UPDATE users SET CAST(is_verified AS TEXT) IN ('0','f','false') WHERE id = ?",
+              'UPDATE users SET is_verified = FALSE WHERE id = ?'
+          )
 
-          # Catch any remaining legacy boolean predicates without touching UPDATE assignments.
-          for p in [p for p in root.rglob('*.php') if '.git' not in p.parts]:
-              text = p.read_text(encoding='utf-8')
-              updated = text
-              updated = re.sub(r'(?i)(\b(?:WHERE|AND)\s+(?:u\.)?is_verified)\s*=\s*1\b', r"\1 IS TRUE", updated)
-              updated = re.sub(r'(?i)(\b(?:WHERE|AND)\s+(?:u\.)?is_verified)\s*=\s*0\b', r"\1 IS FALSE", updated)
-              updated = re.sub(r'(?i)(\b(?:WHERE|AND)\s+(?:s\.)?is_available)\s*=\s*1\b', r"\1 IS TRUE", updated)
-              updated = re.sub(r'(?i)(\b(?:WHERE|AND)\s+(?:s\.)?is_available)\s*=\s*0\b', r"\1 IS FALSE", updated)
-              updated = updated.replace('SET is_verified = 1', 'SET is_verified = TRUE')
-              updated = updated.replace('SET is_verified = 0', 'SET is_verified = FALSE')
-              updated = updated.replace("$is_available = isset($_POST['is_available']) ? 1 : 0;", "$is_available = isset($_POST['is_available']);")
-              updated = updated.replace('$new_status = $current_status ? 0 : 1;', '$new_status = !$current_status;')
-              if updated != text:
-                  p.write_text(updated, encoding='utf-8')
-                  if p.as_posix() not in changed:
-                      changed.append(p.as_posix())
+          # Boolean filter must not bind integer 0/1 to a PostgreSQL BOOLEAN column.
+          replace(
+              'admin/manage_users.php',
+              '''if ($verification !== 'all') {\n    $where_conditions[] = "u.is_verified = ?";\n    $params[] = $verification === 'verified' ? 1 : 0;\n}\n''',
+              '''if ($verification !== 'all') {\n    $where_conditions[] = $verification === 'verified'\n        ? "u.is_verified IS TRUE"\n        : "u.is_verified IS FALSE";\n}\n'''
+          )
+
+          # Admin user report: remove unnecessary GROUP BY and use scalar aggregates.
+          replace(
+              'admin/user_reports.php',
+              '''        SELECT u.id, u.name, u.email, u.phone, u.role, u.is_verified, u.created_at,\n               COUNT(DISTINCT b.id) as total_bookings,\n               COUNT(DISTINCT CASE WHEN b.status = 'confirmed' THEN b.id END) as confirmed_bookings,\n               COALESCE(SUM(CASE WHEN b.status = 'confirmed' THEN b.total_price END), 0) as total_revenue\n        FROM users u\n        LEFT JOIN bookings b ON u.id = b.customer_id\n        $where_clause\n        GROUP BY u.id\n        ORDER BY u.created_at DESC\n''',
+              '''        SELECT u.id, u.name, u.email, u.phone, u.role, u.is_verified, u.created_at,\n               (SELECT COUNT(*) FROM bookings b1 WHERE b1.customer_id = u.id) as total_bookings,\n               (SELECT COUNT(*) FROM bookings b2 WHERE b2.customer_id = u.id AND b2.status = 'confirmed') as confirmed_bookings,\n               (SELECT COALESCE(SUM(CASE WHEN b3.status = 'confirmed' THEN b3.total_price END), 0) FROM bookings b3 WHERE b3.customer_id = u.id) as total_revenue\n        FROM users u\n        $where_clause\n        ORDER BY u.created_at DESC\n'''
+          )
+
+          # Keep normalized integer boolean columns compatible with the bootstrap.
+          replace(
+              'register.php',
+              "$stmt->execute([$name, $email, $phone, $role, $hashed, $role !== 'provider']);",
+              "$stmt->execute([$name, $email, $phone, $role, $hashed, $role === 'provider' ? 0 : 1]);"
+          )
+          replace(
+              'admin/aceept_admin_invitation.php',
+              "VALUES (?, ?, ?, 'admin', TRUE)",
+              "VALUES (?, ?, ?, 'admin', 1)"
+          )
+          replace(
+              'provider/add_service.php',
+              'VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)',
+              'VALUES (?, ?, ?, ?, ?, ?, ?, 1)'
+          )
+          replace(
+              'admin/add_service.php',
+              'VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)',
+              'VALUES (?, ?, ?, ?, ?, ?, ?, 1)'
+          )
+          replace(
+              'provider/edit_service.php',
+              "$is_available = isset($_POST['is_available']);",
+              "$is_available = isset($_POST['is_available']) ? 1 : 0;"
+          )
+          replace(
+              'admin/edit_service.php',
+              "$is_available = isset($_POST['is_available']);",
+              "$is_available = isset($_POST['is_available']) ? 1 : 0;"
+          )
+          replace(
+              'admin/toggle_service_status.php',
+              '$new_status = !$current_status;',
+              '$new_status = $current_status ? 0 : 1;'
+          )
+          replace(
+              'admin/manage_services.php',
+              '''if (!empty($status)) {\n    $where_conditions[] = $status === 'active'\n        ? "s.is_available IS TRUE"\n        : "s.is_available IS FALSE";\n}\n''',
+              '''if (!empty($status)) {\n    $where_conditions[] = "s.is_available = ?";\n    $params[] = $status === 'active' ? 1 : 0;\n}\n'''
+          )
 
           print('Changed files:', changed)
           PY
 
-      - name: PostgreSQL compatibility audit
+      - name: Persist service images on Render
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path('.')
+          changed = []
+
+          def replace(path, old, new):
+              p = root / path
+              text = p.read_text(encoding='utf-8')
+              if old not in text:
+                  return
+              updated = text.replace(old, new)
+              if updated != text:
+                  p.write_text(updated, encoding='utf-8')
+                  if path not in changed:
+                      changed.append(path)
+
+          # Render's container filesystem is ephemeral. Persist service image bytes
+          # in PostgreSQL so images survive every deploy/restart.
+          bootstrap = root / 'tools/ensure_postgres_legacy_compat.php'
+          text = bootstrap.read_text(encoding='utf-8')
+          marker = "// ============================================================\n// LEGACY BOOLEAN COMPATIBILITY\n// ============================================================"
+          image_columns = """// ============================================================\n// PERSISTENT SERVICE IMAGE STORAGE\n// ============================================================\n$serviceImageColumns = [\n    'image_data' => 'TEXT',\n    'image_mime_type' => 'VARCHAR(100)',\n];\n\nforeach ($serviceImageColumns as $column => $definition) {\n    $check = $pdo->prepare(\n        'SELECT 1 FROM information_schema.columns '\n        . 'WHERE table_schema = \\\'public\\' AND table_name = \\\'services\\' AND column_name = ?'\n    );\n    $check->execute([$column]);\n\n    if ($check->fetchColumn() === false) {\n        $pdo->exec(\n            'ALTER TABLE ' . qident('services')\n            . ' ADD COLUMN ' . qident($column) . ' ' . $definition\n        );\n        echo \"Added public.services.{$column}.\\n\";\n    }\n}\n\n"""
+          if 'public.services.image_data' not in text:
+              text = text.replace(marker, image_columns + marker)
+              bootstrap.write_text(text, encoding='utf-8')
+              changed.append('tools/ensure_postgres_legacy_compat.php')
+
+          # The previous upload code converted Unix paths to Windows backslashes;
+          # that breaks move_uploaded_file() on Render/Linux.
+          replace(
+              'provider/add_service.php',
+              "            // WINDOWS-SAFE: Convert to backslashes for move_uploaded_file\n            $target_path = str_replace('/', '\\\\', $target_path);\n            \n            if (move_uploaded_file($_FILES['image']['tmp_name'], $target_path)) {\n                $image_path = 'services/' . $filename; // Store relative path",
+              "            // Keep native Unix paths for Render/Linux.\n            if (move_uploaded_file($_FILES['image']['tmp_name'], $target_path)) {\n                $image_path = 'services/' . $filename; // Store relative path\n                if (getenv('DATABASE_URL') !== '') {\n                    $binary = file_get_contents($target_path);\n                    if ($binary !== false) {\n                        $image_data = base64_encode($binary);\n                        $finfo = new finfo(FILEINFO_MIME_TYPE);\n                        $image_mime_type = $finfo->file($target_path) ?: 'application/octet-stream';\n                    }\n                }"
+          )
+          replace(
+              'provider/add_service.php',
+              "$image_path = null;",
+              "$image_path = null;\n$image_data = null;\n$image_mime_type = null;"
+          )
+          replace(
+              'provider/add_service.php',
+              "INSERT INTO services (provider_id, title, description, category, tier, price, image_path, is_available) \n                VALUES (?, ?, ?, ?, ?, ?, ?, 1)",
+              "INSERT INTO services (provider_id, title, description, category, tier, price, image_path, image_data, image_mime_type, is_available) \n                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)"
+          )
+          replace(
+              'provider/add_service.php',
+              "                $price,\n                $image_path\n            ]);",
+              "                $price,\n                $image_path,\n                $image_data,\n                $image_mime_type\n            ]);"
+          )
+
+          replace(
+              'provider/edit_service.php',
+              "    $image_path = $service['image_path']; // KEEP EXISTING IF NO NEW UPLOAD",
+              "    $image_path = $service['image_path']; // KEEP EXISTING IF NO NEW UPLOAD\n    $image_data = $service['image_data'] ?? null;\n    $image_mime_type = $service['image_mime_type'] ?? null;"
+          )
+          replace(
+              'provider/edit_service.php',
+              "            $target_path = $upload_dir . $filename;\n            $target_path = str_replace('/', '\\\\', $target_path); // WINDOWS SAFE\n            \n            if (move_uploaded_file($_FILES['image']['tmp_name'], $target_path)) {\n                $image_path = 'services/' . $filename;",
+              "            $target_path = $upload_dir . $filename;\n            if (move_uploaded_file($_FILES['image']['tmp_name'], $target_path)) {\n                $image_path = 'services/' . $filename;\n                if (getenv('DATABASE_URL') !== '') {\n                    $binary = file_get_contents($target_path);\n                    if ($binary !== false) {\n                        $image_data = base64_encode($binary);\n                        $finfo = new finfo(FILEINFO_MIME_TYPE);\n                        $image_mime_type = $finfo->file($target_path) ?: 'application/octet-stream';\n                    }\n                }"
+          )
+          replace(
+              'provider/edit_service.php',
+              "SET title = ?, description = ?, category = ?, tier = ?, price = ?, image_path = ?, is_available = ?",
+              "SET title = ?, description = ?, category = ?, tier = ?, price = ?, image_path = ?, image_data = ?, image_mime_type = ?, is_available = ?"
+          )
+          replace(
+              'provider/edit_service.php',
+              "                $price,\n                $image_path,\n                $is_available,",
+              "                $price,\n                $image_path,\n                $image_data,\n                $image_mime_type,\n                $is_available,"
+          )
+
+          # Preserve existing dashboard/customer HTML URLs. Apache rewrites these
+          # requests to the DB-backed image endpoint below.
+          uploads = root / 'uploads'
+          uploads.mkdir(parents=True, exist_ok=True)
+          htaccess = uploads / '.htaccess'
+          htaccess_text = '''RewriteEngine On\nRewriteRule ^services/(.+)$ ../service_image.php?path=services/$1 [L,QSA,NC]\n'''
+          if not htaccess.exists() or htaccess.read_text(encoding='utf-8') != htaccess_text:
+              htaccess.write_text(htaccess_text, encoding='utf-8')
+              changed.append('uploads/.htaccess')
+
+          endpoint = root / 'service_image.php'
+          endpoint_text = '''<?php\nrequire_once __DIR__ . '/config/config.php';\n\n$path = trim((string) ($_GET['path'] ?? ''));\nif ($path === '' || !preg_match('#^services/[A-Za-z0-9._-]+$#', $path)) {\n    http_response_code(400);\n    exit('Invalid image path');\n}\n\ntry {\n    if (trim((string) getenv('DATABASE_URL')) !== '') {\n        $stmt = $pdo->prepare(\n            'SELECT image_data, image_mime_type FROM services WHERE image_path = ? LIMIT 1'\n        );\n        $stmt->execute([$path]);\n        $image = $stmt->fetch();\n\n        if ($image && !empty($image['image_data'])) {\n            $binary = base64_decode((string) $image['image_data'], true);\n            if ($binary !== false) {\n                header('Content-Type: ' . ($image['image_mime_type'] ?: 'application/octet-stream'));\n                header('Cache-Control: public, max-age=86400');\n                header('X-Content-Type-Options: nosniff');\n                echo $binary;\n                exit();\n            }\n        }\n    }\n\n    $file = UPLOADS_DIR . $path;\n    $base = realpath(UPLOADS_DIR);\n    $real = realpath($file);\n    if ($base === false || $real === false || strpos($real, $base . DIRECTORY_SEPARATOR) !== 0 || !is_file($real)) {\n        http_response_code(404);\n        exit('Image not found');\n    }\n\n    $mime = function_exists('mime_content_type')\n        ? (mime_content_type($real) ?: 'application/octet-stream')\n        : 'application/octet-stream';\n    header('Content-Type: ' . $mime);\n    header('Cache-Control: public, max-age=86400');\n    header('X-Content-Type-Options: nosniff');\n    readfile($real);\n} catch (Throwable $e) {\n    error_log('Service image error: ' . $e->getMessage());\n    http_response_code(404);\n    exit('Image not found');\n}\n'''
+          if not endpoint.exists() or endpoint.read_text(encoding='utf-8') != endpoint_text:
+              endpoint.write_text(endpoint_text, encoding='utf-8')
+              changed.append('service_image.php')
+
+          print('Changed files:', sorted(set(changed)))
+          PY
+
+      - name: Static PostgreSQL safety audit
         shell: bash
         run: |
           set -e
           if grep -RInE 'SET[[:space:]]+CAST\(' --include='*.php' --exclude-dir='.git' .; then
-            echo 'ERROR: invalid UPDATE SET CAST(...) remains'
+            echo 'Invalid PostgreSQL UPDATE SET CAST(...) found.'
             exit 1
           fi
           if grep -RInE '(^|[[:space:]])(WHERE|AND)[[:space:]]+(u\.)?is_verified[[:space:]]*=[[:space:]]*[01]([^0-9]|$)' --include='*.php' --exclude-dir='.git' .; then
-            echo 'ERROR: boolean is_verified is still compared with integer'
+            echo 'Boolean is_verified compared with integer found.'
             exit 1
           fi
           if grep -RInE '(^|[[:space:]])(WHERE|AND)[[:space:]]+(s\.)?is_available[[:space:]]*=[[:space:]]*[01]([^0-9]|$)' --include='*.php' --exclude-dir='.git' .; then
-            echo 'ERROR: boolean is_available is still compared with integer'
+            echo 'Boolean is_available compared with integer found.'
             exit 1
           fi
           echo 'PostgreSQL compatibility audit passed.'
@@ -123,5 +260,5 @@ jobs:
             echo "No PostgreSQL compatibility repairs required."
             exit 0
           fi
-          git commit -m "fix: complete PostgreSQL compatibility sweep"
+          git commit -m "fix: persist Render service images"
           git push
