@@ -12,13 +12,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'verify_user' && isset($_POST['user_id'])) {
-            $stmt = $pdo->prepare("UPDATE users SET CAST(is_verified AS TEXT) IN ('1','t','true') WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE users SET is_verified = TRUE WHERE id = ?");
             if ($stmt->execute([$_POST['user_id']])) {
                 setAlert("User verified successfully", "success");
             }
         } 
         elseif ($_POST['action'] === 'unverify_user' && isset($_POST['user_id'])) {
-            $stmt = $pdo->prepare("UPDATE users SET CAST(is_verified AS TEXT) IN ('0','f','false') WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE users SET is_verified = FALSE WHERE id = ?");
             if ($stmt->execute([$_POST['user_id']])) {
                 setAlert("User verification removed", "success");
             }
@@ -57,8 +57,7 @@ if ($role !== 'all') {
 }
 
 if ($verification !== 'all') {
-    $where_conditions[] = "u.is_verified = ?";
-    $params[] = $verification === 'verified' ? 1 : 0;
+    $where_conditions[] = $verification === 'verified' ? "u.is_verified IS TRUE" : "u.is_verified IS FALSE";
 }
 
 if (!empty($search)) {
@@ -71,14 +70,12 @@ if (!empty($search)) {
 $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
 
 $query = "
-    SELECT u.*, 
-           COUNT(DISTINCT b.id) as total_bookings,
-           COUNT(DISTINCT CASE WHEN b.status = 'confirmed' THEN b.id END) as confirmed_bookings,
-           MAX(b.booking_date) as last_booking_date
+    SELECT u.*,
+           (SELECT COUNT(*) FROM bookings b1 WHERE b1.customer_id = u.id) as total_bookings,
+           (SELECT COUNT(*) FROM bookings b2 WHERE b2.customer_id = u.id AND b2.status = 'confirmed') as confirmed_bookings,
+           (SELECT MAX(b3.booking_date) FROM bookings b3 WHERE b3.customer_id = u.id) as last_booking_date
     FROM users u
-    LEFT JOIN bookings b ON u.id = b.customer_id
     $where_clause
-    GROUP BY u.id
     ORDER BY u.created_at DESC
 ";
 

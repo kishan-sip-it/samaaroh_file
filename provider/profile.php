@@ -42,9 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch provider profile
 $stmt = $pdo->prepare("
-    SELECT u.*, COUNT(s.id) as service_count
+    SELECT u.*,
+           (SELECT COUNT(*) FROM services s1 WHERE s1.provider_id = u.id) as service_count
     FROM users u
-    LEFT JOIN services s ON u.id = s.provider_id
     WHERE u.id = ?
 ");
 $stmt->execute([$_SESSION['user_id']]);

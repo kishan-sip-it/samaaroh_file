@@ -26,13 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_type'])) {
     // Get user data
     $query = "
         SELECT u.id, u.name, u.email, u.phone, u.role, u.is_verified, u.created_at,
-               COUNT(DISTINCT b.id) as total_bookings,
-               COUNT(DISTINCT CASE WHEN b.status = 'confirmed' THEN b.id END) as confirmed_bookings,
-               COALESCE(SUM(CASE WHEN b.status = 'confirmed' THEN b.total_price END), 0) as total_revenue
+               (SELECT COUNT(*) FROM bookings b1 WHERE b1.customer_id = u.id) as total_bookings,
+               (SELECT COUNT(*) FROM bookings b2 WHERE b2.customer_id = u.id AND b2.status = 'confirmed') as confirmed_bookings,
+               (SELECT COALESCE(SUM(CASE WHEN b3.status = 'confirmed' THEN b3.total_price END), 0) FROM bookings b3 WHERE b3.customer_id = u.id) as total_revenue
         FROM users u
-        LEFT JOIN bookings b ON u.id = b.customer_id
         $where_clause
-        GROUP BY u.id
         ORDER BY u.created_at DESC
     ";
     

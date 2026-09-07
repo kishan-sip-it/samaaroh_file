@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category = $_POST['category'];
     $tier = $_POST['tier'];
     $price = floatval($_POST['price']);
-    $is_available = isset($_POST['is_available']) ? 1 : 0;
+    $is_available = isset($_POST['is_available']);
     
     // VALIDATION
     $errors = [];

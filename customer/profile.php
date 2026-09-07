@@ -40,9 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch customer profile
 $stmt = $pdo->prepare("
-    SELECT u.*, COUNT(b.id) as booking_count, COALESCE(SUM(b.total_price), 0) as total_spent
+    SELECT u.*,
+           (SELECT COUNT(*) FROM bookings b1 WHERE b1.customer_id = u.id) as booking_count,
+           (SELECT COALESCE(SUM(b2.total_price), 0) FROM bookings b2 WHERE b2.customer_id = u.id) as total_spent
     FROM users u
-    LEFT JOIN bookings b ON u.id = b.customer_id
     WHERE u.id = ?
 ");
 $stmt->execute([$_SESSION['user_id']]);

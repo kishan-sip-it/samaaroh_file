@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = trim($_POST['description']);
     $price = floatval($_POST['price']);
     $category = $_POST['category'];
-    $is_available = isset($_POST['is_available']) ? 1 : 0;
+    $is_available = isset($_POST['is_available']);
     
     try {
         $stmt = $pdo->prepare("
