@@ -1,4 +1,4 @@
-name: PostgreSQL compatibility fix
+name: PostgreSQL compatibility sweep
 
 on:
   push:
@@ -18,64 +18,150 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Patch PostgreSQL-incompatible legacy queries
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+
+      - name: Repair PostgreSQL incompatibilities
+        shell: python
+        run: |
+          from pathlib import Path
+
+          root = Path('.')
+          changed = []
+
+          def replace_in(path, replacements):
+              p = root / path
+              text = p.read_text(encoding='utf-8')
+              updated = text
+              for old, new in replacements:
+                  if old in updated:
+                      updated = updated.replace(old, new)
+              if updated != text:
+                  p.write_text(updated, encoding='utf-8')
+                  changed.append(path)
+
+          replace_in('customer/profile.php', [
+              (
+                  '''    SELECT u.*, COUNT(b.id) as booking_count, COALESCE(SUM(b.total_price), 0) as total_spent\n    FROM users u\n    LEFT JOIN bookings b ON u.id = b.customer_id\n    WHERE u.id = ?\n''',
+                  '''    SELECT u.*,\n           (SELECT COUNT(*) FROM bookings b1 WHERE b1.customer_id = u.id) as booking_count,\n           (SELECT COALESCE(SUM(b2.total_price), 0) FROM bookings b2 WHERE b2.customer_id = u.id) as total_spent\n    FROM users u\n    WHERE u.id = ?\n'''
+              )
+          ])
+
+          replace_in('provider/profile.php', [
+              (
+                  '''    SELECT u.*, COUNT(s.id) as service_count\n    FROM users u\n    LEFT JOIN services s ON u.id = s.provider_id\n    WHERE u.id = ?\n''',
+                  '''    SELECT u.*,\n           (SELECT COUNT(*) FROM services s1 WHERE s1.provider_id = u.id) as service_count\n    FROM users u\n    WHERE u.id = ?\n'''
+              )
+          ])
+
+          replace_in('admin/manage_users.php', [
+              (
+                  '''    SELECT u.*, \n           COUNT(DISTINCT b.id) as total_bookings,\n           COUNT(DISTINCT CASE WHEN b.status = 'confirmed' THEN b.id END) as confirmed_bookings,\n           MAX(b.booking_date) as last_booking_date\n    FROM users u\n    LEFT JOIN bookings b ON u.id = b.customer_id\n    $where_clause\n    GROUP BY u.id\n    ORDER BY u.created_at DESC\n''',
+                  '''    SELECT u.*,\n           (SELECT COUNT(*) FROM bookings b1 WHERE b1.customer_id = u.id) as total_bookings,\n           (SELECT COUNT(*) FROM bookings b2 WHERE b2.customer_id = u.id AND b2.status = 'confirmed') as confirmed_bookings,\n           (SELECT MAX(b3.booking_date) FROM bookings b3 WHERE b3.customer_id = u.id) as last_booking_date\n    FROM users u\n    $where_clause\n    ORDER BY u.created_at DESC\n'''
+              ),
+              (
+                  "UPDATE users SET CAST(is_verified AS TEXT) IN ('1','t','true') WHERE id = ?",
+                  "UPDATE users SET is_verified = TRUE WHERE id = ?"
+              ),
+              (
+                  "UPDATE users SET CAST(is_verified AS TEXT) IN ('0','f','false') WHERE id = ?",
+                  "UPDATE users SET is_verified = FALSE WHERE id = ?"
+              ),
+              (
+                  '''if ($verification !== 'all') {\n    $where_conditions[] = "u.is_verified = ?";\n    $params[] = $verification === 'verified' ? 1 : 0;\n}\n''',
+                  '''if ($verification !== 'all') {\n    $where_conditions[] = $verification === 'verified'\n        ? "u.is_verified IS TRUE"\n        : "u.is_verified IS FALSE";\n}\n'''
+              )
+          ])
+
+          replace_in('admin/user_reports.php', [
+              (
+                  '''        SELECT u.id, u.name, u.email, u.phone, u.role, u.is_verified, u.created_at,\n               COUNT(DISTINCT b.id) as total_bookings,\n               COUNT(DISTINCT CASE WHEN b.status = 'confirmed' THEN b.id END) as confirmed_bookings,\n               COALESCE(SUM(CASE WHEN b.status = 'confirmed' THEN b.total_price END), 0) as total_revenue\n        FROM users u\n        LEFT JOIN bookings b ON u.id = b.customer_id\n        $where_clause\n        GROUP BY u.id\n        ORDER BY u.created_at DESC\n''',
+                  '''        SELECT u.id, u.name, u.email, u.phone, u.role, u.is_verified, u.created_at,\n               (SELECT COUNT(*) FROM bookings b1 WHERE b1.customer_id = u.id) as total_bookings,\n               (SELECT COUNT(*) FROM bookings b2 WHERE b2.customer_id = u.id AND b2.status = 'confirmed') as confirmed_bookings,\n               (SELECT COALESCE(SUM(CASE WHEN b3.status = 'confirmed' THEN b3.total_price END), 0) FROM bookings b3 WHERE b3.customer_id = u.id) as total_revenue\n        FROM users u\n        $where_clause\n        ORDER BY u.created_at DESC\n'''
+              )
+          ])
+
+          replace_in('register.php', [
+              (
+                  "$stmt->execute([$name, $email, $phone, $role, $hashed, $role === 'provider' ? 0 : 1]);",
+                  "$stmt->execute([$name, $email, $phone, $role, $hashed, $role !== 'provider']);"
+              )
+          ])
+
+          replace_in('admin/aceept_admin_invitation.php', [
+              ("VALUES (?, ?, ?, 'admin', 1)", "VALUES (?, ?, ?, 'admin', TRUE)")
+          ])
+
+          replace_in('provider/add_service.php', [
+              ('VALUES (?, ?, ?, ?, ?, ?, ?, 1)', 'VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)')
+          ])
+          replace_in('admin/add_service.php', [
+              ('VALUES (?, ?, ?, ?, ?, ?, ?, 1)', 'VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)')
+          ])
+          replace_in('provider/edit_service.php', [
+              ("$is_available = isset($_POST['is_available']) ? 1 : 0;", "$is_available = isset($_POST['is_available']);")
+          ])
+          replace_in('admin/edit_service.php', [
+              ("$is_available = isset($_POST['is_available']) ? 1 : 0;", "$is_available = isset($_POST['is_available']);")
+          ])
+          replace_in('admin/toggle_service_status.php', [
+              ('$new_status = $current_status ? 0 : 1;', '$new_status = !$current_status;')
+          ])
+          replace_in('admin/manage_services.php', [
+              (
+                  '''if (!empty($status)) {\n    $where_conditions[] = "s.is_available = ?";\n    $params[] = $status === 'active' ? 1 : 0;\n}\n''',
+                  '''if (!empty($status)) {\n    $where_conditions[] = $status === 'active'\n        ? "s.is_available IS TRUE"\n        : "s.is_available IS FALSE";\n}\n'''
+              )
+          ])
+
+          print('Changed files:', changed)
+
+      - name: PostgreSQL compatibility audit
         shell: python
         run: |
           from pathlib import Path
           import re
 
           root = Path('.')
-          changed = []
+          errors = []
+          php_files = [p for p in root.rglob('*.php') if '.git' not in p.parts]
 
-          # Legacy MySQL TINYINT(1) values may exist as PostgreSQL BOOLEAN.
-          # These predicates work with either representation.
-          replacements = [
-              (r'\bu\.is_verified\s*=\s*1\b', "CAST(u.is_verified AS TEXT) IN ('1','t','true')"),
-              (r'\bu\.is_verified\s*=\s*0\b', "CAST(u.is_verified AS TEXT) IN ('0','f','false')"),
-              (r'\bs\.is_available\s*=\s*1\b', "CAST(s.is_available AS TEXT) IN ('1','t','true')"),
-              (r'\bs\.is_available\s*=\s*0\b', "CAST(s.is_available AS TEXT) IN ('0','f','false')"),
-              (r'\bis_verified\s*=\s*1\b', "CAST(is_verified AS TEXT) IN ('1','t','true')"),
-              (r'\bis_verified\s*=\s*0\b', "CAST(is_verified AS TEXT) IN ('0','f','false')"),
-              (r'\bis_available\s*=\s*1\b', "CAST(is_available AS TEXT) IN ('1','t','true')"),
-              (r'\bis_available\s*=\s*0\b', "CAST(is_available AS TEXT) IN ('0','f','false')"),
-          ]
+          for p in php_files:
+              text = p.read_text(encoding='utf-8')
+              if 'SET CAST(' in text:
+                  errors.append(f'{p}: invalid SET CAST(...) remains')
+              if re.search(r'\b(?:WHERE|AND)\s+(?:u\.)?is_verified\s*=\s*[01]\b', text, re.I):
+                  errors.append(f'{p}: boolean is_verified compared to integer')
+              if re.search(r'\b(?:WHERE|AND)\s+(?:s\.)?is_available\s*=\s*[01]\b', text, re.I):
+                  errors.append(f'{p}: boolean is_available compared to integer')
+              for m in re.finditer(r'SELECT\s+(.{0,5000}?)\s+FROM\s+.{0,5000}?GROUP\s+BY\s+.{0,500}', text, re.I | re.S):
+                  select_part = m.group(1)
+                  if re.search(r'\bu\.\*\b', select_part, re.I) and re.search(r'\b(?:COUNT|SUM|AVG|MIN|MAX)\s*\(', select_part, re.I):
+                      errors.append(f'{p}: SELECT u.* with aggregate + GROUP BY remains')
 
-          for path in root.rglob('*.php'):
-              if '.git' in path.parts or path.as_posix().startswith('tools/'):
-                  continue
-              text = path.read_text(encoding='utf-8')
-              updated = text
-              for pattern, replacement in replacements:
-                  updated = re.sub(pattern, replacement, updated)
+          if errors:
+              print('\n'.join(errors))
+              raise SystemExit(1)
+          print(f'PostgreSQL compatibility audit passed for {len(php_files)} PHP files.')
 
-              # customer/dashboard.php used GROUP BY s.id while selecting
-              # u.name/u.phone. PostgreSQL correctly rejects that query.
-              if path.as_posix() == 'customer/dashboard.php':
-                  updated = updated.replace(
-                      'COUNT(DISTINCT b.id) as booking_count',
-                      '(SELECT COUNT(*) FROM bookings b2 WHERE b2.service_id = s.id) as booking_count'
-                  )
-                  updated = updated.replace(
-                      'LEFT JOIN bookings b ON s.id = b.service_id\n',
-                      ''
-                  )
-                  updated = updated.replace('        GROUP BY s.id\n', '')
+      - name: PHP syntax validation
+        shell: bash
+        run: |
+          set -e
+          while IFS= read -r -d '' file; do
+            php -l "$file"
+          done < <(git ls-files -z -- '*.php')
 
-              if updated != text:
-                  path.write_text(updated, encoding='utf-8')
-                  changed.append(path.as_posix())
-
-          print('Changed files:', changed)
-
-      - name: Commit fixes
+      - name: Commit repairs
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
-            echo "No PostgreSQL compatibility changes required."
+            echo "No PostgreSQL compatibility repairs required."
             exit 0
           fi
-          git commit -m "fix: make Samaaroh queries PostgreSQL compatible"
+          git commit -m "fix: complete PostgreSQL compatibility sweep"
           git push
