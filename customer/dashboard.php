@@ -26,7 +26,7 @@ $category = $_GET['category'] ?? 'all';
 $search = $_GET['search'] ?? '';
 
 if ($category !== 'all' || !empty($search)) {
-    $where_conditions = ["s.is_available = 1", "u.is_verified = 1"];
+    $where_conditions = ["CAST(s.is_available AS TEXT) IN ('1','t','true')", "CAST(u.is_verified AS TEXT) IN ('1','t','true')"];
     $params = [];
     
     if ($category !== 'all') {
@@ -45,24 +45,20 @@ if ($category !== 'all' || !empty($search)) {
     $where_clause = implode(" AND ", $where_conditions);
     $services = $pdo->query("
         SELECT s.*, u.name as provider_name, u.phone as provider_phone,
-               COUNT(DISTINCT b.id) as booking_count
+               (SELECT COUNT(*) FROM bookings b2 WHERE b2.service_id = s.id) as booking_count
         FROM services s
         LEFT JOIN users u ON s.provider_id = u.id
-        LEFT JOIN bookings b ON s.id = b.service_id
-        WHERE $where_clause
-        GROUP BY s.id
+                WHERE $where_clause
         ORDER BY s.id DESC
     ")->fetchAll();
 } else {
     // Fetch available services
     $services = $pdo->query("
         SELECT s.*, u.name as provider_name, u.phone as provider_phone,
-               COUNT(DISTINCT b.id) as booking_count
+               (SELECT COUNT(*) FROM bookings b2 WHERE b2.service_id = s.id) as booking_count
         FROM services s
         JOIN users u ON s.provider_id = u.id
-        LEFT JOIN bookings b ON s.id = b.service_id
-        WHERE s.is_available = 1 AND u.is_verified = 1
-        GROUP BY s.id
+                WHERE CAST(s.is_available AS TEXT) IN ('1','t','true') AND CAST(u.is_verified AS TEXT) IN ('1','t','true')
         ORDER BY s.id DESC
     ")->fetchAll();
 }
@@ -72,7 +68,7 @@ $categories = $pdo->query("
     SELECT DISTINCT category, COUNT(*) as count
     FROM services s
     JOIN users u ON s.provider_id = u.id
-    WHERE s.is_available = 1 AND u.is_verified = 1
+    WHERE CAST(s.is_available AS TEXT) IN ('1','t','true') AND CAST(u.is_verified AS TEXT) IN ('1','t','true')
     GROUP BY category
     ORDER BY count DESC
 ")->fetchAll();

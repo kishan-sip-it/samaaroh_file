@@ -12,13 +12,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'verify_user' && isset($_POST['user_id'])) {
-            $stmt = $pdo->prepare("UPDATE users SET is_verified = 1 WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE users SET CAST(is_verified AS TEXT) IN ('1','t','true') WHERE id = ?");
             if ($stmt->execute([$_POST['user_id']])) {
                 setAlert("User verified successfully", "success");
             }
         } 
         elseif ($_POST['action'] === 'unverify_user' && isset($_POST['user_id'])) {
-            $stmt = $pdo->prepare("UPDATE users SET is_verified = 0 WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE users SET CAST(is_verified AS TEXT) IN ('0','f','false') WHERE id = ?");
             if ($stmt->execute([$_POST['user_id']])) {
                 setAlert("User verification removed", "success");
             }
@@ -92,8 +92,8 @@ $stats = [
     'customers' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'customer'")->fetchColumn(),
     'providers' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'provider'")->fetchColumn(),
     'admins' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'admin'")->fetchColumn(),
-    'verified' => $pdo->query("SELECT COUNT(*) FROM users WHERE is_verified = 1")->fetchColumn(),
-    'unverified' => $pdo->query("SELECT COUNT(*) FROM users WHERE is_verified = 0")->fetchColumn(),
+    'verified' => $pdo->query("SELECT COUNT(*) FROM users WHERE CAST(is_verified AS TEXT) IN ('1','t','true')")->fetchColumn(),
+    'unverified' => $pdo->query("SELECT COUNT(*) FROM users WHERE CAST(is_verified AS TEXT) IN ('0','f','false')")->fetchColumn(),
 ];
 ?>
 <!DOCTYPE html>

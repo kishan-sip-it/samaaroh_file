@@ -28,7 +28,7 @@ $stmt = $pdo->prepare("
     SELECT s.*, u.name as provider_name 
     FROM services s
     JOIN users u ON s.provider_id = u.id
-    WHERE s.id = ? AND s.is_available = 1
+    WHERE s.id = ? AND CAST(s.is_available AS TEXT) IN ('1','t','true')
 ");
 $stmt->execute([$service_id]);
 $service = $stmt->fetch();

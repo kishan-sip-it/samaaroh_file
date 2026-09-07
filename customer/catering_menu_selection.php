@@ -16,7 +16,7 @@ $stmt = $pdo->prepare("
     SELECT s.*, u.name as provider_name, u.phone as provider_phone, u.email as provider_email 
     FROM services s 
     JOIN users u ON s.provider_id = u.id 
-    WHERE s.category = 'catering' AND s.is_available = 1 
+    WHERE s.category = 'catering' AND CAST(s.is_available AS TEXT) IN ('1','t','true') 
     ORDER BY s.created_at DESC
 ");
 $stmt->execute();
@@ -35,7 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
             SELECT s.*, u.name as provider_name 
             FROM services s 
             JOIN users u ON s.provider_id = u.id 
-            WHERE s.id = ? AND s.category = 'catering' AND s.is_available = 1
+            WHERE s.id = ? AND s.category = 'catering' AND CAST(s.is_available AS TEXT) IN ('1','t','true')
         ");
         $stmt->execute([$service_id]);
         $selected_service = $stmt->fetch();

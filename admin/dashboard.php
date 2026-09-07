@@ -13,7 +13,7 @@ $stats = [
     'total_users' => $pdo->query("SELECT COUNT(*) as count FROM users")->fetchColumn(),
     'total_bookings' => $pdo->query("SELECT COUNT(*) as count FROM bookings")->fetchColumn(),
     'total_services' => $pdo->query("SELECT COUNT(*) as count FROM services")->fetchColumn(),
-    'verified_users' => $pdo->query("SELECT COUNT(*) as count FROM users WHERE is_verified = 1")->fetchColumn(),
+    'verified_users' => $pdo->query("SELECT COUNT(*) as count FROM users WHERE CAST(is_verified AS TEXT) IN ('1','t','true')")->fetchColumn(),
     'pending_bookings' => $pdo->query("SELECT COUNT(*) as count FROM bookings WHERE status = 'pending'")->fetchColumn(),
     'confirmed_bookings' => $pdo->query("SELECT COUNT(*) as count FROM bookings WHERE status = 'confirmed'")->fetchColumn(),
     'completed_bookings' => $pdo->query("SELECT COUNT(*) as count FROM bookings WHERE status = 'completed'")->fetchColumn(),

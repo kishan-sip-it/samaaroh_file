@@ -54,8 +54,8 @@ $stats = [
     'customers' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'customer'")->fetchColumn(),
     'providers' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'provider'")->fetchColumn(),
     'admins' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'admin'")->fetchColumn(),
-    'verified' => $pdo->query("SELECT COUNT(*) FROM users WHERE is_verified = 1")->fetchColumn(),
-    'unverified' => $pdo->query("SELECT COUNT(*) FROM users WHERE is_verified = 0")->fetchColumn(),
+    'verified' => $pdo->query("SELECT COUNT(*) FROM users WHERE CAST(is_verified AS TEXT) IN ('1','t','true')")->fetchColumn(),
+    'unverified' => $pdo->query("SELECT COUNT(*) FROM users WHERE CAST(is_verified AS TEXT) IN ('0','f','false')")->fetchColumn(),
 ];
 
 // PDF GENERATION FUNCTION
