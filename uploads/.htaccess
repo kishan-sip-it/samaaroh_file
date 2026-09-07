@@ -1,0 +1,3 @@
+RewriteEngine On
+Options -Indexes
+RewriteRule ^services/(.+)$ ../service_image.php?path=services/$1 [L,QSA,NC]
